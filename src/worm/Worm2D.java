@@ -94,8 +94,10 @@ public class Worm2D extends JPanel implements ActionListener {
 	private int mTummySize = 2;
 
 	protected void placeMunchie(int index) {
+		// True if there is space to place a new munchie on the board, otherwise, false (never enters loop)
+		boolean hasRoomToPlace = ((getWormLength() + mNumMunchies) < mMaxWiggleRoom);
 		boolean isPlaced = false;
-		do {
+		while (hasRoomToPlace && !isPlaced) {
 			int x = random.nextInt(mMaxX);
 			int y = random.nextInt(mMaxY);
 
@@ -106,7 +108,7 @@ public class Worm2D extends JPanel implements ActionListener {
 
 				isPlaced = true;
 			}
-		} while (!isPlaced);
+		}
 	}
 
 	@Override

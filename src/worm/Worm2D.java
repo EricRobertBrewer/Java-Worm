@@ -34,7 +34,7 @@ public class Worm2D extends JPanel implements ActionListener {
 
 	protected static final int SPACE_WORM = -1;
 	protected static final int SPACE_EMPTY = 0;
-	/** The board, which saves each space, whether the worm or empty. */
+	/** The board, which saves each space, whether the worm or empty or a munchie. */
 	private int mBoard[][];
 
 	private Cell mWorm[];
@@ -84,7 +84,7 @@ public class Worm2D extends JPanel implements ActionListener {
 	}
 
 	public int getWormLength() {
-		return (mHeadIndex - mTailIndex) % mMaxWiggleRoom;
+		return (mHeadIndex - mTailIndex + mMaxWiggleRoom) % mMaxWiggleRoom;
 	}
 
 	private static final int MUNCHIE_RANGE = 5;

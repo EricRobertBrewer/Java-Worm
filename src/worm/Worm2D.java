@@ -13,13 +13,13 @@ import javax.swing.JPanel;
 import javax.swing.Timer;
 
 public class Worm2D extends JPanel implements ActionListener {
+	
+	public interface WormListener {
+		public void onWormDied(int lengthAtDeath);
+	}
+	
+	private WormListener mWormListener;
 
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 1L;
-
-	private static final int RECT_SIZE = 10;
 	private final int mMaxX;
 	private final int mMaxY;
 	/**
@@ -42,17 +42,12 @@ public class Worm2D extends JPanel implements ActionListener {
 	private int mHeadIndex = 0;
 	private int mTailIndex = 0;
 
-	/**
-	 * Create the panel.
-	 */
-	public Worm2D(int x, int y) {
-		this(x, y, 1);
-	}
-
-	public Worm2D(int x, int y, int munchies) {
-		mMaxX = x;
-		mMaxY = y;
-		mMaxWiggleRoom = x * y;
+	public Worm2D(WormListener wormListener, Settings settings) {
+		mWormListener = wormListener;
+		
+		mMaxX = Settings.SIZE_WIDTH[settings.size];
+		mMaxY = Settings.SIZE_HEIGHT[settings.size];
+		mMaxWiggleRoom = mMaxX * mMaxY;
 		setPreferredSize(new Dimension(mMaxX * RECT_SIZE, mMaxY * RECT_SIZE));
 		setBackground(Color.BLACK);
 
@@ -69,7 +64,7 @@ public class Worm2D extends JPanel implements ActionListener {
 		mWorm[mHeadIndex] = head;
 		mBoard[head.getX()][head.getY()] = SPACE_WORM;
 
-		mNumMunchies = munchies;
+		mNumMunchies = 5;
 		mMunchie = new Cell[mNumMunchies];
 		for (int i = 0; i < mNumMunchies; i++) {
 			placeMunchie(i);
@@ -78,7 +73,7 @@ public class Worm2D extends JPanel implements ActionListener {
 		addKeyListener(new DirectionAdapter());
 		setFocusable(true);
 
-		mTimer = new Timer(TIMER_DELAY, this);
+		mTimer = new Timer(Settings.TIMER_DELAY[settings.speed], this);
 		mTimer.setInitialDelay(0);
 		mTimer.start();
 	}
@@ -111,10 +106,13 @@ public class Worm2D extends JPanel implements ActionListener {
 		}
 	}
 
+	private static final int RECT_SIZE = 10;
+	
 	@Override
 	protected void paintComponent(Graphics g) {
 		super.paintComponent(g);
 
+		// TODO Color of higher value munchies is deeper
 		g.setColor(Color.MAGENTA);
 		for (int i = 0; i < mNumMunchies; i++) {
 			g.fillRect(mMunchie[i].getX() * RECT_SIZE, mMunchie[i].getY() * RECT_SIZE, RECT_SIZE, RECT_SIZE);
@@ -130,9 +128,7 @@ public class Worm2D extends JPanel implements ActionListener {
 		}
 	}
 
-	private static final int TIMER_DELAY = 120;
 	private Timer mTimer;
-	private boolean mIsWormDead = false;
 
 	@Override
 	public void actionPerformed(ActionEvent action) {
@@ -158,14 +154,14 @@ public class Worm2D extends JPanel implements ActionListener {
 
 			// Out of bounds
 			if (headCandidateX < 0 || headCandidateX >= mMaxX || headCandidateY < 0 || headCandidateY >= mMaxY) {
-				mIsWormDead = true;
-			}
-
-			if (!mIsWormDead) { // Still in bounds
+				wormDied();
+				return;
+			} else { // Still in bounds
 				int candidateSpace = mBoard[headCandidateX][headCandidateY];
 
 				if (candidateSpace == SPACE_WORM) { // Trying to eat itself
-					mIsWormDead = true;
+					wormDied();
+					return;
 				} else { // Legal move; Empty or Munchie?
 
 					// Move head
@@ -175,8 +171,10 @@ public class Worm2D extends JPanel implements ActionListener {
 
 					mBoard[newHead.getX()][newHead.getY()] = SPACE_WORM;
 
+					// Munchie!
 					if (candidateSpace != SPACE_EMPTY) {
 						mTummySize += candidateSpace;
+						// TODO Each munchie's value is it's index in the array + 1, so we don't have to go through this for-loop
 						for (int i = 0; i < mNumMunchies; i++) {
 							if (mMunchie[i].getX() == newHead.getX() && mMunchie[i].getY() == newHead.getY()) {
 								placeMunchie(i);
@@ -185,7 +183,7 @@ public class Worm2D extends JPanel implements ActionListener {
 						}
 					}
 
-					if (mTummySize > 0) { // Tail grows; tail stays
+					if (mTummySize > 0) { // Tail grows; tail does not move forward
 						mTummySize--;
 					} else { // Move the tail forward, too
 						Cell tail = mWorm[mTailIndex];
@@ -198,50 +196,49 @@ public class Worm2D extends JPanel implements ActionListener {
 
 		repaint();
 	}
+	
+	private void wormDied() {
+		mTimer.stop();
+		mWormListener.onWormDied(getWormLength());
+	}
 
 	protected static final int DIRECTION_UP = KeyEvent.VK_W;
 	protected static final int DIRECTION_LEFT = KeyEvent.VK_A;
 	protected static final int DIRECTION_DOWN = KeyEvent.VK_S;
 	protected static final int DIRECTION_RIGHT = KeyEvent.VK_D;
+	protected static int getDirectionOpposite(int direction) {
+		switch (direction) {
+		case DIRECTION_UP:
+			return DIRECTION_DOWN;
+		case DIRECTION_DOWN:
+			return DIRECTION_UP;
+		case DIRECTION_LEFT:
+			return DIRECTION_RIGHT;
+		case DIRECTION_RIGHT:
+			return DIRECTION_LEFT;
+		}
+		return direction;
+	}
 	protected static final int DIRECTION_PAUSE = KeyEvent.VK_SPACE;
 	protected int mDirection = DIRECTION_PAUSE;
 
+	// TODO Use Key Bindings instead
 	protected class DirectionAdapter extends KeyAdapter {
 
 		@Override
 		public void keyPressed(KeyEvent e) {
 			super.keyPressed(e);
 
-			int key = e.getKeyCode();
-			switch (key) {
-			case DIRECTION_UP:
-				if (mDirection != DIRECTION_DOWN) {
-					mDirection = key;
-					mTimer.restart();
-				}
-				break;
-			case DIRECTION_LEFT:
-				if (mDirection != DIRECTION_RIGHT) {
-					mDirection = key;
-					mTimer.restart();
-				}
-				break;
-			case DIRECTION_DOWN:
-				if (mDirection != DIRECTION_UP) {
-					mDirection = key;
-					mTimer.restart();
-				}
-				break;
-			case DIRECTION_RIGHT:
-				if (mDirection != DIRECTION_LEFT) {
-					mDirection = key;
-					mTimer.restart();
-				}
-				break;
-			case DIRECTION_PAUSE:
-				mDirection = key;
-				break;
+			int keyCode = e.getKeyCode();
+			if (mDirection != getDirectionOpposite(keyCode)) {
+				mDirection = keyCode;
+				mTimer.restart();
 			}
 		}
 	}
+
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
 }

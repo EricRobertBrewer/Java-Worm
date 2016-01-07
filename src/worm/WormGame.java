@@ -1,15 +1,15 @@
 package worm;
 
 import java.awt.EventQueue;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 
 import javax.swing.JFrame;
+import javax.swing.JPanel;
 
-public class WormGame extends JFrame {
+import worm.Worm2D.WormListener;
 
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 1L;
+public class WormGame extends JFrame implements ActionListener, WormListener {
 
 	/**
 	 * Launch the application.
@@ -27,15 +27,48 @@ public class WormGame extends JFrame {
 		});
 	}
 
+	private Settings mSettings;
+
 	/**
 	 * Create the frame.
 	 */
 	public WormGame() {
-		add(new Worm2D(40, 30, 5));
-
-		setTitle("Worm");
+		mSettings = new Settings();
+		
+		showMainPanel(-1);
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+	}
+	
+	private void showMainPanel(int lastScore) {
+		setContentPane(new MainPanel(mSettings, this, lastScore));
+		setTitle("Play Worm");
+		setResizable(true);
+		pack();
+		setLocationRelativeTo(null);
+	}
+
+	@Override
+	public void actionPerformed(ActionEvent e) {
+		beginGame();
+	}
+	
+	private void beginGame() {
+		// TODO Game Panel shouldn't have extra space, ~8 pixels now
+		JPanel worm = new Worm2D(this, mSettings);
+		setContentPane(worm);
+		setTitle("Worm");
 		setResizable(false);
 		pack();
+		setLocationRelativeTo(null);
 	}
+
+	@Override
+	public void onWormDied(int length) {
+		showMainPanel(length);
+	}
+
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
 }

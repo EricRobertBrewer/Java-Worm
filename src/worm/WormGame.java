@@ -56,6 +56,8 @@ public class WormGame extends JFrame implements ActionListener, WormListener {
 		// TODO Game Panel shouldn't have extra space, ~8 pixels now
 		JPanel worm = new Worm2D(this, mSettings);
 		setContentPane(worm);
+		worm.requestFocusInWindow();
+		
 		setTitle("Worm | Press SPACE to Pause");
 		setResizable(false);
 		pack();

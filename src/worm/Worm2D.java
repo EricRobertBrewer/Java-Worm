@@ -33,8 +33,8 @@ public class Worm2D extends JPanel implements ActionListener {
 	 */
 	private final int mMaxWiggleRoom;
 	
-	private static final int SPACE_WORM = -1;
-	private static final int SPACE_EMPTY = 0;
+	private static final int SPACE_WORM = -2;
+	private static final int SPACE_EMPTY = -1;
 	/** The board, which saves each space, whether the worm or empty or a munchie. */
 	private int mBoard[][];
 
@@ -52,16 +52,13 @@ public class Worm2D extends JPanel implements ActionListener {
 		setPreferredSize(new Dimension(mMaxX * RECT_SIZE, mMaxY * RECT_SIZE));
 		
 		setBackground(Color.BLACK);
-		getInputMap().put(KeyStroke.getKeyStroke(DIRECTION_UP, 0), KEY_UP);
-		getInputMap().put(KeyStroke.getKeyStroke(DIRECTION_LEFT, 0), KEY_LEFT);
-		getInputMap().put(KeyStroke.getKeyStroke(DIRECTION_DOWN, 0), KEY_DOWN);
-		getInputMap().put(KeyStroke.getKeyStroke(DIRECTION_RIGHT, 0), KEY_RIGHT);
-		getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_SPACE, 0), KEY_PAUSE);
-		getActionMap().put(KEY_UP, pressedUp);
-		getActionMap().put(KEY_LEFT, pressedLeft);
-		getActionMap().put(KEY_DOWN, pressedDown);
-		getActionMap().put(KEY_RIGHT, pressedRight);
-		getActionMap().put(KEY_PAUSE, pressedPause);
+		int[] directions = { DIRECTION_UP, DIRECTION_LEFT, DIRECTION_DOWN, DIRECTION_RIGHT, KeyEvent.VK_SPACE };
+		String[] keys = { KEY_UP, KEY_LEFT, KEY_DOWN, KEY_RIGHT, KEY_PAUSE };
+		Action[] actions = { pressedUp, pressedLeft, pressedDown, pressedRight, pressedPause };
+		for (int i = 0; i < directions.length; i++) {
+			getInputMap().put(KeyStroke.getKeyStroke(directions[i], 0), keys[i]);
+			getActionMap().put(keys[i], actions[i]);
+		}
 		setFocusable(true);
 
 		mBoard = new int[mMaxX][mMaxY];
@@ -77,42 +74,97 @@ public class Worm2D extends JPanel implements ActionListener {
 		mWorm[mHeadIndex] = head;
 		mBoard[head.getX()][head.getY()] = SPACE_WORM;
 
-		mNumMunchies = 5;
-		mMunchie = new Cell[mNumMunchies];
-		for (int i = 0; i < mNumMunchies; i++) {
-			placeMunchie(i);
+		mMunchieMax = settings.munchies;
+		mMunchie = new Cell[mMunchieMax];
+		for (int i = 0; i < mMunchieMax; i++) {
+			placeRandomMunchie();
 		}
 
 		mTimer = new Timer(Settings.TIMER_DELAY[settings.speed], this);
 		mTimer.setInitialDelay(0);
 	}
 
+	/**
+	 * 
+	 * @return length of worm including the head
+	 */
 	public int getLength() {
-		return (mHeadIndex - mTailIndex + mMaxWiggleRoom) % mMaxWiggleRoom;
+		return (mHeadIndex - mTailIndex + mMaxWiggleRoom) % mMaxWiggleRoom + 1;
 	}
 
-	private static final int MUNCHIE_RANGE = 5;
-	private final int mNumMunchies;
+	private static final int MUNCHIE_VALUE_MAX = 1;
+	private final int mMunchieMax;
+	private int mNumMunchies;
 	private final Random random = new Random();
-	private Cell mMunchie[];
-	private int mTummySize = 2;
+	private Cell[] mMunchie;
+	private int mTummySize = 1;
+	
+	/** @return True if there is space to place a new munchie on the board; otherwise, false */
+	private boolean hasEmptySpacesOnBoard() {
+		return (getLength() + mNumMunchies) < mMaxWiggleRoom;
+	}
 
-	private void placeMunchie(int index) {
-		// True if there is space to place a new munchie on the board, otherwise, false (never enters loop)
-		boolean hasRoomToPlace = ((getLength() + mNumMunchies) < mMaxWiggleRoom);
+	/**
+	 * 
+	 * @return The newly placed Cell, or null if there were no empty spaces on the board
+	 */
+	public Cell placeRandomMunchie() {
+		if (!hasEmptySpacesOnBoard()) {
+			return null;
+		}
+		
+		for (int i = 0; i < mMunchieMax; i++) {
+			if (mMunchie[i] == null) {
+				return placeOrReplaceMunchieAtIndex(i);
+			}
+		}
+		return null;
+	}
+	
+	private boolean removeMunchieAtIndex(int index) {
+		if (mMunchie[index] == null) {
+			return false;
+		}
+		
+		Cell munchie = mMunchie[index];
+		mBoard[munchie.getX()][munchie.getY()] = SPACE_EMPTY;
+		mMunchie[index] = null;
+		mNumMunchies--;
+		return true;
+	}
+	
+	/**
+	 * @return The newly placed munchie. If there was no room on the board to place a munchie, returns null;
+	 * */
+	private Cell placeOrReplaceMunchieAtIndex(int index) {
+		if (!hasEmptySpacesOnBoard()) {
+			return null;
+		}
+		
+		Cell oldMunchie = mMunchie[index];
+		Cell newMunchie = null;
+		
 		boolean isPlaced = false;
-		while (hasRoomToPlace && !isPlaced) {
+		while (!isPlaced) {
 			int x = random.nextInt(mMaxX);
 			int y = random.nextInt(mMaxY);
 
 			if (mBoard[x][y] == SPACE_EMPTY) {
-				int munchieSize = random.nextInt(MUNCHIE_RANGE) + 1;
-				mBoard[x][y] = munchieSize;
-				mMunchie[index] = new Cell(x, y);
+				if (oldMunchie != null) {
+					// Clear old map space with non-existent index
+					mBoard[oldMunchie.getX()][oldMunchie.getY()] = SPACE_EMPTY;
+				} else {
+					mNumMunchies++;
+				}
+				mBoard[x][y] = index;
+				newMunchie = new Cell(x, y);
+				mMunchie[index] = newMunchie;
 
 				isPlaced = true;
 			}
 		}
+		
+		return newMunchie;
 	}
 
 	private static final int RECT_SIZE = 10;
@@ -124,18 +176,29 @@ public class Worm2D extends JPanel implements ActionListener {
 		// TODO Pause screen
 
 		// TODO Color of higher value munchies is deeper
+		// Draw munchies
 		g.setColor(Color.MAGENTA);
-		for (int i = 0; i < mNumMunchies; i++) {
-			g.fillRect(mMunchie[i].getX() * RECT_SIZE, mMunchie[i].getY() * RECT_SIZE, RECT_SIZE, RECT_SIZE);
+		for (int i = 0; i < mMunchieMax; i++) {
+			if (mMunchie[i] != null) {
+				g.fillRect(mMunchie[i].getX() * RECT_SIZE, mMunchie[i].getY() * RECT_SIZE, RECT_SIZE, RECT_SIZE);
+			}
 		}
 
-		g.setColor(Color.ORANGE);
+		// Draw head
+		g.setColor(Color.RED);
 		g.fillRect(mWorm[mHeadIndex].getX() * RECT_SIZE, mWorm[mHeadIndex].getY() * RECT_SIZE, RECT_SIZE, RECT_SIZE);
 
+		// Draw body
 		g.setColor(Color.YELLOW);
-		for (int i = 0; i < getLength(); i++) {
+		for (int i = 1; i < getLength()-1; i++) {
 			Cell cell = mWorm[(mTailIndex + i) % mMaxWiggleRoom];
 			g.fillRect(cell.getX() * RECT_SIZE, cell.getY() * RECT_SIZE, RECT_SIZE, RECT_SIZE);
+		}
+
+		// Draw tail
+		if (mTailIndex != mHeadIndex) {
+			g.setColor(Color.ORANGE);
+			g.fillRect(mWorm[mTailIndex].getX() * RECT_SIZE, mWorm[mTailIndex].getY() * RECT_SIZE, RECT_SIZE, RECT_SIZE);
 		}
 	}
 
@@ -146,7 +209,6 @@ public class Worm2D extends JPanel implements ActionListener {
 		Cell head = mWorm[mHeadIndex];
 		int headCandidateX = head.getX();
 		int headCandidateY = head.getY();
-
 		switch (mDirection) {
 		case DIRECTION_UP:
 			headCandidateY--;
@@ -174,23 +236,22 @@ public class Worm2D extends JPanel implements ActionListener {
 				return;
 			} else { // Legal move; Empty or Munchie?
 
+				// Munchie! That means candidateSpace is the index of this munchie in the array mMunchie
+				if (candidateSpace != SPACE_EMPTY) {
+					// TODO Make munchies fade away over time
+					mTummySize += MUNCHIE_VALUE_MAX;
+					if (placeOrReplaceMunchieAtIndex(mBoard[headCandidateX][headCandidateY]) == null) {
+						wormDied();
+						return;
+					}
+				}
+				// If candidateSpace == SPACE_EMPTY, move forward as usual
+
 				// Move head
 				Cell newHead = new Cell(headCandidateX, headCandidateY);
 				mHeadIndex = (mHeadIndex + 1) % mMaxWiggleRoom; // Increment head index
 				mWorm[mHeadIndex] = newHead; // Place new head in worm
 				mBoard[newHead.getX()][newHead.getY()] = SPACE_WORM;
-
-				// Munchie!
-				if (candidateSpace != SPACE_EMPTY) {
-					mTummySize += candidateSpace;
-					// TODO Each munchie's value is it's index in the array + 1, so we don't have to go through this for-loop
-					for (int i = 0; i < mNumMunchies; i++) {
-						if (mMunchie[i].getX() == newHead.getX() && mMunchie[i].getY() == newHead.getY()) {
-							placeMunchie(i);
-							break;
-						}
-					}
-				}
 
 				if (mTummySize > 0) { // Tail grows; tail does not move forward
 					mTummySize--;

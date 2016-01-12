@@ -255,56 +255,57 @@ public class Worm2D extends JPanel implements ActionListener {
 			break;
 		}
 
+		// TODO Remove bounds; wrap worm
 		// Out of bounds
 		if (headCandidateX < 0 || headCandidateX >= mMaxX || headCandidateY < 0 || headCandidateY >= mMaxY) {
 			wormDied();
 			return;
-		} else { // Still in bounds
-			int candidateSpace = mBoard[headCandidateX][headCandidateY];
+		}
 
-			if (candidateSpace == SPACE_WORM) { // Trying to eat itself
+		// Still in bounds
+		// Move tail
+		if (mTummySize > 0) { // Tail grows; tail does not move forward
+			mTummySize--;
+			mWormListener.onLengthChanged(this);
+		} else { // Move the tail forward, too
+			Cell tail = mWorm[mTailIndex];
+			mBoard[tail.x][tail.y] = SPACE_EMPTY;
+			mTailIndex = (mTailIndex + 1) % getMaxWiggleRoom();
+		}
+		
+		int candidateSpace = mBoard[headCandidateX][headCandidateY];
+		if (candidateSpace == SPACE_WORM) { // Trying to eat itself
+			wormDied();
+			return;
+		}
+
+		// Legal move; Empty or Food?
+		
+		// Food! That means candidateSpace is the index of this food in the food array
+		if (candidateSpace != SPACE_EMPTY) {
+			int foodIndex = mBoard[headCandidateX][headCandidateY];
+			mTummySize += getGrowthFromFood(mFoodCell[foodIndex].getFood().getFreshness(), FOOD_FRESHNESS_PER_GROWTH);
+			if (!removeFoodAtIndex(foodIndex) || placeRandomFood(FOOD_FRESHNESS_MAX, FOOD_RATE_OF_DECAY) == null) {
 				wormDied();
 				return;
-			} else { // Legal move; Empty or Food?
-
-				// Food! That means candidateSpace is the index of this food in the array mFood
-				if (candidateSpace != SPACE_EMPTY) {
-					int foodIndex = mBoard[headCandidateX][headCandidateY];
-					mTummySize += getGrowthFromFood(mFoodCell[foodIndex].getFood().getFreshness(), FOOD_FRESHNESS_PER_GROWTH);
-					if (!removeFoodAtIndex(foodIndex) || placeRandomFood(FOOD_FRESHNESS_MAX, FOOD_RATE_OF_DECAY) == null) {
+			}
+		}
+		
+		// Move head
+		Cell newHead = new Cell(headCandidateX, headCandidateY);
+		mHeadIndex = (mHeadIndex + 1) % getMaxWiggleRoom(); // Increment head index
+		mWorm[mHeadIndex] = newHead; // Place new head in worm
+		mBoard[newHead.x][newHead.y] = SPACE_WORM;
+		
+		// Food decays
+		for (int i = 0; i < mFreshFood; i++) {
+			if (mFoodCell[i] != null) {
+				mFoodCell[i].getFood().decay();
+				if (mFoodCell[i].getFood().isDecayed()) {
+					removeFoodAtIndex(i);
+					if (mFreshFood == 0) {
 						wormDied();
-						return;
-					}
-				}
-
-				// TODO Be nice; move tail forward first, to allow head chasing tail in adjacent space
-				// Move head
-				Cell newHead = new Cell(headCandidateX, headCandidateY);
-				mHeadIndex = (mHeadIndex + 1) % getMaxWiggleRoom(); // Increment head index
-				mWorm[mHeadIndex] = newHead; // Place new head in worm
-				mBoard[newHead.x][newHead.y] = SPACE_WORM;
-
-				// Move tail
-				if (mTummySize > 0) { // Tail grows; tail does not move forward
-					mTummySize--;
-					mWormListener.onLengthChanged(this);
-				} else { // Move the tail forward, too
-					Cell tail = mWorm[mTailIndex];
-					mBoard[tail.x][tail.y] = SPACE_EMPTY;
-					mTailIndex = (mTailIndex + 1) % getMaxWiggleRoom();
-				}
-				
-				// Food decays
-				for (int i = 0; i < mFreshFood; i++) {
-					if (mFoodCell[i] != null) {
-						mFoodCell[i].getFood().decay();
-						if (mFoodCell[i].getFood().isDecayed()) {
-							removeFoodAtIndex(i);
-							if (mFreshFood == 0) {
-								wormDied();
-								break;
-							}
-						}
+						break;
 					}
 				}
 			}

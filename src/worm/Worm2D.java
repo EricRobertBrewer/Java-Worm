@@ -1,95 +1,95 @@
 package worm;
 
-import java.awt.Color;
-import java.awt.Dimension;
-import java.awt.Graphics;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.util.Random;
 
-import javax.swing.AbstractAction;
-import javax.swing.Action;
-import javax.swing.JPanel;
-import javax.swing.KeyStroke;
-import javax.swing.Timer;
-
-// TODO Separate Worm into Worm parent with protected attributes/methods and Worm2D child
-public class Worm2D extends JPanel implements ActionListener {
+//TODO Separate Worm into Worm parent with protected attributes/methods and Worm2D child
+public class Worm2D {
 	
-	public interface WormListener {
-		public void onWormDied(Worm2D worm);
-		public void onGamePaused(Worm2D worm);
-		public void onGameUnpaused(Worm2D worm);
-		public void onLengthChanged(Worm2D worm);
-	}
-	
-	private WormListener mWormListener;
+	public Worm2D(Settings settings) {
+		mWidth = Settings.SIZE_WIDTH[settings.size];
+		mHeight = Settings.SIZE_HEIGHT[settings.size];
 
-	private final int mMaxX;
-	private final int mMaxY;
-	/**
-	 * The number of possible empty spaces on the board ie. X * Y. Used for array sizing.
-	 */
-	private final int getMaxWiggleRoom() {
-		return mMaxX * mMaxY;
-	}
-	
-	private static final int SPACE_WORM = -2;
-	private static final int SPACE_EMPTY = -1;
-	/** The board, which saves each space, whether the worm or empty or food.
-	 *  A positive number indicates a food and its index within the food array.
-	 */
-	private int mBoard[][];
-
-	/** Circular queue */
-	private Cell mWorm[];
-	/** Index of head within worm. */
-	private int mHeadIndex = 0;
-	private int mTailIndex = 0;
-
-	// TODO Separate WormPanel (drawing) from Worm object (game mechanics)
-	public Worm2D(WormListener wormListener, Settings settings) {
-		mWormListener = wormListener;
-		
-		mMaxX = Settings.SIZE_WIDTH[settings.size];
-		mMaxY = Settings.SIZE_HEIGHT[settings.size];
-		setPreferredSize(new Dimension(mMaxX * RECT_SIZE, mMaxY * RECT_SIZE));
-		
-		setBackground(Color.BLACK);
-		int[] directions = { DIRECTION_UP, DIRECTION_LEFT, DIRECTION_DOWN, DIRECTION_RIGHT, KeyEvent.VK_SPACE };
-		String[] keys = { KEY_UP, KEY_LEFT, KEY_DOWN, KEY_RIGHT, KEY_PAUSE };
-		Action[] actions = { pressedUp, pressedLeft, pressedDown, pressedRight, pressedPause };
-		for (int i = 0; i < directions.length; i++) {
-			getInputMap().put(KeyStroke.getKeyStroke(directions[i], 0), keys[i]);
-			getActionMap().put(keys[i], actions[i]);
-		}
-		setFocusable(true);
-
-		mBoard = new int[mMaxX][mMaxY];
-		for (int i = 0; i < mMaxX; i++) {
-			for (int j = 0; j < mMaxY; j++) {
-				mBoard[i][j] = SPACE_EMPTY;
+		mSpace = new int[mWidth][mHeight];
+		for (int i = 0; i < mWidth; i++) {
+			for (int j = 0; j < mHeight; j++) {
+				mSpace[i][j] = SPACE_EMPTY;
 			}
 		}
 
-		mWorm = new Cell[getMaxWiggleRoom()];
+		mBody = new Cell[getMaxWiggleRoom()];
 		// Head pops out of his hole in center of board
-		Cell head = new Cell(mMaxX / 2, mMaxY / 2);
-		mWorm[mHeadIndex] = head;
-		mBoard[head.x][head.y] = SPACE_WORM;
+		Cell head = new Cell(mWidth / 2, mHeight / 2);
+		mBody[mHeadIndex] = head;
+		mSpace[head.x][head.y] = SPACE_WORM;
 
 		mFoodCell = new FoodCell[getMaxWiggleRoom()];
 		for (int i = 0; i < settings.food; i++) {
 			placeRandomFood(FOOD_FRESHNESS_MAX, FOOD_RATE_OF_DECAY);
 		}
-
-		mTimer = new Timer(Settings.TIMER_DELAY[settings.speed], this);
-		mTimer.setInitialDelay(0);
 	}
 
+	private final int mWidth;
+	
+	public int getDimensionWidth() {
+		return mWidth;
+	}
+	
+	private final int mHeight;
+
+	public int getDimensionHeight() {
+		return mHeight;
+	}
+	
 	/**
-	 * 
+	 * The number of possible empty spaces on the board ie. X * Y. Used for array sizing.
+	 */
+	private final int getMaxWiggleRoom() {
+		return mWidth * mHeight;
+	}
+	
+	public static final int SPACE_WORM = -2;
+	public static final int SPACE_EMPTY = -1;
+	
+	/** The board, which saves each space, whether the worm or empty or food.
+	 *  A positive number indicates a food and its index within the food array.
+	 */
+	private int mSpace[][];
+	
+	/**
+	 * @param x
+	 * @param y
+	 * @return one of either:
+	 * worm ({@code SPACE_WORM}),
+	 * empty ({@code SPACE_EMPTY}),
+	 * or food (indicated by a non-negative integer)
+	 */
+	public int getSpace(int x, int y) {
+		return mSpace[x][y];
+	}
+
+	/** Circular queue */
+	private Cell mBody[];
+	
+	public Cell getBody(int sectionsFromTail) {
+		int index = (mTailIndex + sectionsFromTail) % getMaxWiggleRoom();
+		return mBody[index];
+	}
+	
+	/** Index of head within worm. */
+	private int mHeadIndex = 0;
+	
+	public Cell getHead() {
+		return mBody[mHeadIndex];
+	}
+	
+	private int mTailIndex = 0;
+	
+	public Cell getTail() {
+		return mBody[mTailIndex];
+	}
+	
+	/**
 	 * @return length of worm including the head
 	 */
 	public int getLength() {
@@ -98,23 +98,36 @@ public class Worm2D extends JPanel implements ActionListener {
 
 	/** @return True if there is space to place a new food on the board; otherwise, false */
 	private boolean hasEmptySpacesOnBoard() {
-		return (getLength() + mFreshFood) < getMaxWiggleRoom();
+		return (getLength() + mFoodCount) < getMaxWiggleRoom();
 	}
 
-	private static final int FOOD_FRESHNESS_MAX = 100;
-	private static final int FOOD_RATE_OF_DECAY = 1;
-	private static final int FOOD_FRESHNESS_PER_GROWTH = 20;
-	protected static int getGrowthFromFood(int freshness, int freshnessPerGrowth) {
+	// TODO Make these settings
+	public static final int FOOD_FRESHNESS_MAX = 100;
+	public static final int FOOD_RATE_OF_DECAY = 1;
+	public static final int FOOD_FRESHNESS_PER_GROWTH = 20;
+	
+	public static int getGrowthFromFood(int freshness, int freshnessPerGrowth) {
 		return (int) Math.ceil((double)freshness / (double)freshnessPerGrowth);
 	}
 	
-	private int mFreshFood;
-	private final Random random = new Random();
+	private int mFoodCount;
+	
+	public int getFoodCount() {
+		return mFoodCount;
+	}
+	
 	private FoodCell[] mFoodCell;
+	
+	public FoodCell getFoodCell(int index) {
+		return mFoodCell[index];
+	}
+	
 	private int mTummySize = 1;
 	
+	private final Random random = new Random();
+
 	/**
-	 * 
+	 * Place a food in a randomly chosen, legal space on the board.
 	 * @param freshness
 	 * @param rateOfDecay
 	 * @return The newly placed {@code FoodCell}, or {@code null} if there were no empty spaces on the board
@@ -126,8 +139,8 @@ public class Worm2D extends JPanel implements ActionListener {
 		
 		FoodCell foodCell = null;
 		while (foodCell == null) {
-			int x = random.nextInt(mMaxX);
-			int y = random.nextInt(mMaxY);
+			int x = random.nextInt(mWidth);
+			int y = random.nextInt(mHeight);
 			foodCell = placeFood(x, y, freshness, rateOfDecay);
 		}
 		return foodCell;
@@ -142,11 +155,11 @@ public class Worm2D extends JPanel implements ActionListener {
 	 * @return the newly placed {@code FoodCell}, or {@code null} if the cell was occupied
 	 */
 	public FoodCell placeFood(int x, int y, int freshness, int rateOfDecay) {
-		if (mBoard[x][y] == SPACE_EMPTY) {
-			mBoard[x][y] = mFreshFood;
-			mFoodCell[mFreshFood] = new FoodCell(x, y, freshness, rateOfDecay);
-			mFreshFood++;
-			return mFoodCell[mFreshFood-1]; // The newly added FoodCell
+		if (mSpace[x][y] == SPACE_EMPTY) {
+			mSpace[x][y] = mFoodCount;
+			mFoodCell[mFoodCount] = new FoodCell(x, y, freshness, rateOfDecay);
+			mFoodCount++;
+			return mFoodCell[mFoodCount-1]; // The newly added FoodCell
 		}
 		return null;
 	}
@@ -162,85 +175,39 @@ public class Worm2D extends JPanel implements ActionListener {
 		}
 		
 		FoodCell food = mFoodCell[index];
-		mBoard[food.x][food.y] = SPACE_EMPTY;
-		if (index != mFreshFood-1) { // Replace removed FoodCell with last FoodCell in array
-			FoodCell lastFood = mFoodCell[mFreshFood-1];
-			mBoard[lastFood.x][lastFood.y] = index;
+		mSpace[food.x][food.y] = SPACE_EMPTY;
+		if (index != mFoodCount-1) { // Replace removed FoodCell with last FoodCell in array
+			FoodCell lastFood = mFoodCell[mFoodCount-1];
+			mSpace[lastFood.x][lastFood.y] = index;
 			mFoodCell[index] = lastFood;
 		}
-		mFoodCell[mFreshFood-1] = null;
-		mFreshFood--;
+		mFoodCell[mFoodCount-1] = null;
+		mFoodCount--;
 		return true;
 	}
-	
-	private static final int RECT_SIZE = 11;
-	private static final Color COLOR_WORM_HEAD = Color.RED;
-	private static final Color COLOR_WORM_BODY = Color.YELLOW;
-	private static final Color COLOR_WORM_TAIL = Color.ORANGE;
-	private static final Color COLOR_FOOD_GROWTH_INDICATOR = Color.RED;
-	private static final Color COLOR_FOOD_FRESH = Color.GREEN; // (0, 255, 0)
-	private static final Color COLOR_FOOD_DECAYED = new Color(102, 51, 0);
+
 	/**
-	 * Useful for drawing a color which gradually fades into another color.
-	 * @param a starting color (0.0 away from {@code distance})
-	 * @param b color to fade towards (will achieve this color if {@code distance} is 1.0)
-	 * @param distance linear distance from {@code a} to {@code b}. Between 0.0 and 1.0.
-	 * @return a generated color {@code distance} between {@code a} and {@code b}
+	 * Steps are executed in this order:
+	 * Checks to see if move in the given direction is within dimensional bounds.
+	 * Increments tail forward, or leaves it in place if body should grow (due to eaten food).
+	 * Checks if the next space in the given direction is any part of the worm's body.
+	 * Checks if the space is food. If so, add another food in an empty space at 100% freshness.
+	 * Move the head forward in the given direction.
+	 * All food decays at one times its rate of decay.
+	 * @param direction
+	 * @return true if the worm is attempting to move into an empty space; otherwise, false.
+	 * Ways to die:
+	 * 1. attempting to move out of dimensional bounds,
+	 * 2. attempting to move into any part of the worm's body,
+	 * 3. all available space is filled with either food or body spaces,
+	 * 4. all remaining food disappears (decays).
+	 * <b>Note:</b> Attempting to move after {@code false} is returned could lead to adverse behavior.
 	 */
-	private static final Color getColorBetweenLinear(Color a, Color b, float distance) {
-		float red = (a.getRed() * distance) + ((1 - distance) * b.getRed());
-		float green = (a.getGreen() * distance) + ((1 - distance) * b.getGreen());
-		float blue = (a.getBlue() * distance) + ((1 - distance) * b.getBlue());
-		return new Color(red/255, green/255, blue/255);
-	}
-	
-	@Override
-	protected void paintComponent(Graphics g) {
-		super.paintComponent(g);
-		
-		// TODO Pause screen
-
-		// Draw food
-		for (int i = 0; i < mFreshFood; i++) {
-			if (mFoodCell[i] != null) {
-				int x = mFoodCell[i].x * RECT_SIZE;
-				int y = mFoodCell[i].y * RECT_SIZE;
-				
-				g.setColor(getColorBetweenLinear(COLOR_FOOD_FRESH, COLOR_FOOD_DECAYED, (float)mFoodCell[i].getFood().getFreshness() / FOOD_FRESHNESS_MAX));
-				g.fillRect(x, y, RECT_SIZE, RECT_SIZE);
-				
-				int growthValue = getGrowthFromFood(mFoodCell[i].getFood().getFreshness(), FOOD_FRESHNESS_PER_GROWTH);
-				g.setColor(COLOR_FOOD_GROWTH_INDICATOR);
-				g.drawString(String.valueOf(growthValue), x + RECT_SIZE / 2 - 3, y + RECT_SIZE / 2 + 5);
-			}
-		}
-
-		// Draw head
-		g.setColor(COLOR_WORM_HEAD);
-		g.fillRect(mWorm[mHeadIndex].x * RECT_SIZE, mWorm[mHeadIndex].y * RECT_SIZE, RECT_SIZE, RECT_SIZE);
-
-		// Draw body
-		g.setColor(COLOR_WORM_BODY);
-		for (int i = 1; i < getLength()-1; i++) {
-			Cell cell = mWorm[(mTailIndex + i) % getMaxWiggleRoom()];
-			g.fillRect(cell.x * RECT_SIZE, cell.y * RECT_SIZE, RECT_SIZE, RECT_SIZE);
-		}
-
-		// Draw tail
-		if (mTailIndex != mHeadIndex) {
-			g.setColor(COLOR_WORM_TAIL);
-			g.fillRect(mWorm[mTailIndex].x * RECT_SIZE, mWorm[mTailIndex].y * RECT_SIZE, RECT_SIZE, RECT_SIZE);
-		}
-	}
-
-	private Timer mTimer;
-
-	@Override
-	public void actionPerformed(ActionEvent action) {
-		Cell head = mWorm[mHeadIndex];
+	public boolean move(int direction) {
+		Cell head = mBody[mHeadIndex];
 		int headCandidateX = head.x;
 		int headCandidateY = head.y;
-		switch (mDirection) {
+		switch (direction) {
 		case DIRECTION_UP:
 			headCandidateY--;
 			break;
@@ -257,74 +224,65 @@ public class Worm2D extends JPanel implements ActionListener {
 
 		// TODO Remove bounds; wrap worm
 		// Out of bounds
-		if (headCandidateX < 0 || headCandidateX >= mMaxX || headCandidateY < 0 || headCandidateY >= mMaxY) {
-			wormDied();
-			return;
+		if (headCandidateX < 0 || headCandidateX >= mWidth || headCandidateY < 0 || headCandidateY >= mHeight) {
+			return false;
 		}
 
 		// Still in bounds
 		// Move tail
 		if (mTummySize > 0) { // Tail grows; tail does not move forward
 			mTummySize--;
-			mWormListener.onLengthChanged(this);
 		} else { // Move the tail forward, too
-			Cell tail = mWorm[mTailIndex];
-			mBoard[tail.x][tail.y] = SPACE_EMPTY;
+			Cell tail = mBody[mTailIndex];
+			mSpace[tail.x][tail.y] = SPACE_EMPTY;
+			// TODO make space in body behind tail null
 			mTailIndex = (mTailIndex + 1) % getMaxWiggleRoom();
 		}
 		
-		int candidateSpace = mBoard[headCandidateX][headCandidateY];
+		int candidateSpace = mSpace[headCandidateX][headCandidateY];
 		if (candidateSpace == SPACE_WORM) { // Trying to eat itself
-			wormDied();
-			return;
+			return false;
 		}
 
 		// Legal move; Empty or Food?
 		
 		// Food! That means candidateSpace is the index of this food in the food array
 		if (candidateSpace != SPACE_EMPTY) {
-			int foodIndex = mBoard[headCandidateX][headCandidateY];
+			int foodIndex = mSpace[headCandidateX][headCandidateY];
 			mTummySize += getGrowthFromFood(mFoodCell[foodIndex].getFood().getFreshness(), FOOD_FRESHNESS_PER_GROWTH);
 			if (!removeFoodAtIndex(foodIndex) || placeRandomFood(FOOD_FRESHNESS_MAX, FOOD_RATE_OF_DECAY) == null) {
-				wormDied();
-				return;
+				return false;
 			}
 		}
 		
 		// Move head
 		Cell newHead = new Cell(headCandidateX, headCandidateY);
 		mHeadIndex = (mHeadIndex + 1) % getMaxWiggleRoom(); // Increment head index
-		mWorm[mHeadIndex] = newHead; // Place new head in worm
-		mBoard[newHead.x][newHead.y] = SPACE_WORM;
+		mBody[mHeadIndex] = newHead; // Place new head in worm
+		mSpace[newHead.x][newHead.y] = SPACE_WORM;
 		
 		// Food decays
-		for (int i = 0; i < mFreshFood; i++) {
+		for (int i = 0; i < mFoodCount; i++) {
 			if (mFoodCell[i] != null) {
 				mFoodCell[i].getFood().decay();
 				if (mFoodCell[i].getFood().isDecayed()) {
 					removeFoodAtIndex(i);
-					if (mFreshFood == 0) {
-						wormDied();
-						break;
+					if (mFoodCount == 0) {
+						return false;
 					}
 				}
 			}
 		}
-
-		repaint();
+		
+		return true; // Didn't die; move was legal
 	}
+
+	public static final int DIRECTION_UP = KeyEvent.VK_W;
+	public static final int DIRECTION_LEFT = KeyEvent.VK_A;
+	public static final int DIRECTION_DOWN = KeyEvent.VK_S;
+	public static final int DIRECTION_RIGHT = KeyEvent.VK_D;
 	
-	private void wormDied() {
-		mTimer.stop();
-		mWormListener.onWormDied(this);
-		mWormListener = null;
-	}
-
-	private static final int DIRECTION_UP = KeyEvent.VK_W;
-	private static final int DIRECTION_LEFT = KeyEvent.VK_A;
-	private static final int DIRECTION_DOWN = KeyEvent.VK_S;
-	private static final int DIRECTION_RIGHT = KeyEvent.VK_D;
-	private static int getDirectionOpposite(int direction) {
+	public static int getDirectionOpposite(int direction) {
 		switch (direction) {
 		case DIRECTION_UP:
 			return DIRECTION_DOWN;
@@ -337,70 +295,4 @@ public class Worm2D extends JPanel implements ActionListener {
 		}
 		return direction;
 	}
-	
-	private static final String KEY_UP = "up";
-	private static final String KEY_LEFT = "left";
-	private static final String KEY_DOWN = "down";
-	private static final String KEY_RIGHT = "right";
-	private Action pressedUp = new AbstractAction() {
-		@Override
-		public void actionPerformed(ActionEvent e) {
-			changeDirection(DIRECTION_UP);
-		}
-		private static final long serialVersionUID = 1L;
-	};
-	private Action pressedLeft = new AbstractAction() {
-		@Override
-		public void actionPerformed(ActionEvent e) {
-			changeDirection(DIRECTION_LEFT);
-		}
-		private static final long serialVersionUID = 1L;
-	};
-	private Action pressedDown = new AbstractAction() {
-		@Override
-		public void actionPerformed(ActionEvent e) {
-			changeDirection(DIRECTION_DOWN);
-		}
-		private static final long serialVersionUID = 1L;
-	};
-	private Action pressedRight = new AbstractAction() {
-		@Override
-		public void actionPerformed(ActionEvent e) {
-			changeDirection(DIRECTION_RIGHT);
-		}
-		private static final long serialVersionUID = 1L;
-	};
-	
-	private static final String KEY_PAUSE = "pause";
-	private Action pressedPause = new AbstractAction() {
-		@Override
-		public void actionPerformed(ActionEvent e) {
-			if (mTimer.isRunning()) {
-				mWormListener.onGamePaused(Worm2D.this);
-				mTimer.stop();
-			} else {
-				mTimer.start();
-				mWormListener.onGameUnpaused(Worm2D.this);
-			}
-		}
-		private static final long serialVersionUID = 1L;
-	};
-	
-	private int mDirection = -1;
-
-	private void changeDirection(int direction) {
-		if (mDirection != getDirectionOpposite(direction)) {
-			mDirection = direction;
-			boolean wasTimerPaused = !mTimer.isRunning();
-			mTimer.restart();
-			if (wasTimerPaused) {
-				mWormListener.onGameUnpaused(this);
-			}
-		}
-	}
-
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 1L;
 }

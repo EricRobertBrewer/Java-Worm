@@ -7,9 +7,7 @@ import java.awt.event.ActionListener;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 
-import worm.Worm2D.WormListener;
-
-public class WormGame extends JFrame implements ActionListener, WormListener {
+public class MainFrame extends JFrame implements ActionListener, WormListener {
 
 	/**
 	 * Launch the application.
@@ -18,7 +16,7 @@ public class WormGame extends JFrame implements ActionListener, WormListener {
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
 				try {
-					WormGame frame = new WormGame();
+					MainFrame frame = new MainFrame();
 					frame.setVisible(true);
 				} catch (Exception e) {
 					e.printStackTrace();
@@ -32,7 +30,7 @@ public class WormGame extends JFrame implements ActionListener, WormListener {
 	/**
 	 * Create the frame.
 	 */
-	public WormGame() {
+	public MainFrame() {
 		mSettings = new Settings();
 		
 		showMainPanel(-1);
@@ -55,7 +53,7 @@ public class WormGame extends JFrame implements ActionListener, WormListener {
 	private void beginGame() {
 		// TODO Game Panel shouldn't have extra space, ~8 pixels now
 		// TODO 2 player
-		JPanel worm = new Worm2D(this, mSettings);
+		JPanel worm = new WormPanel(this, mSettings);
 		setContentPane(worm);
 		worm.requestFocusInWindow();
 		

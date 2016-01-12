@@ -390,7 +390,11 @@ public class Worm2D extends JPanel implements ActionListener {
 	private void changeDirection(int direction) {
 		if (mDirection != getDirectionOpposite(direction)) {
 			mDirection = direction;
+			boolean wasTimerPaused = !mTimer.isRunning();
 			mTimer.restart();
+			if (wasTimerPaused) {
+				mWormListener.onGameUnpaused(this);
+			}
 		}
 	}
 

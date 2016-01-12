@@ -13,9 +13,9 @@ public class Settings {
 	public static final String[] SPEED_NAMES = { "Slow", "Medium", "Fast", "Faster", "Fastest" };
 	public int speed = 0;
 	
-	public static final int MUNCHIE_MIN = 1;
-	public static final int MUNCHIE_MAX = 20;
-	public static final int MUNCHIE_STEP = 1;
-	public static final String MUNCHIE_LABEL_NAME = "Food:";
-	public int munchies = MUNCHIE_MIN;
+	public static final int FOOD_MIN = 1;
+	public static final int FOOD_MAX = 20;
+	public static final int FOOD_STEP = 1;
+	public static final String FOOD_LABEL_NAME = "Food:";
+	public int food = FOOD_MIN;
 }

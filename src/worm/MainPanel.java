@@ -51,6 +51,7 @@ public class MainPanel extends JPanel {
 		sizePanel.add(mSizeComboBox);
 		add(sizePanel);
 		
+		// TODO Make speed selectable by slider
 		JPanel speedPanel = new JPanel();
 		speedPanel.setLayout(new BoxLayout(speedPanel, BoxLayout.LINE_AXIS));
 		speedPanel.add(new JLabel(Settings.SPEED_LABEL_NAME));
@@ -68,22 +69,24 @@ public class MainPanel extends JPanel {
 		speedPanel.add(mSpeedComboBox);
 		add(speedPanel);
 		
-		JPanel munchiesPanel = new JPanel();
-		munchiesPanel.setLayout(new BoxLayout(munchiesPanel, BoxLayout.LINE_AXIS));
-		munchiesPanel.add(new JLabel(Settings.MUNCHIE_LABEL_NAME));
-		SpinnerNumberModel munchieSpinnerModel = new SpinnerNumberModel(mSettings.munchies,
-				Settings.MUNCHIE_MIN,
-				Settings.MUNCHIE_MAX,
-				Settings.MUNCHIE_STEP);
-		JSpinner munchieSpinner = new JSpinner(munchieSpinnerModel);
-		munchieSpinner.addChangeListener(new ChangeListener() {
+		JPanel foodPanel = new JPanel();
+		foodPanel.setLayout(new BoxLayout(foodPanel, BoxLayout.LINE_AXIS));
+		foodPanel.add(new JLabel(Settings.FOOD_LABEL_NAME));
+		SpinnerNumberModel munchieSpinnerModel = new SpinnerNumberModel(mSettings.food,
+				Settings.FOOD_MIN,
+				Settings.FOOD_MAX,
+				Settings.FOOD_STEP);
+		JSpinner foodSpinner = new JSpinner(munchieSpinnerModel);
+		foodSpinner.addChangeListener(new ChangeListener() {
 			@Override
 			public void stateChanged(ChangeEvent e) {
-				mSettings.munchies = (int) munchieSpinnerModel.getNumber();
+				mSettings.food = (int) munchieSpinnerModel.getNumber();
 			}
 		});
-		munchiesPanel.add(munchieSpinner);
-		add(munchiesPanel);
+		foodPanel.add(foodSpinner);
+		add(foodPanel);
+		
+		// TODO Add boolean doesFoodDecay
 		
 		JButton playButton = new JButton("Play!");
 		playButton.addActionListener(playButtonListener);

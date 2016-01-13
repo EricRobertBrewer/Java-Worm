@@ -7,19 +7,19 @@ import java.util.Random;
 public class Worm2D {
 	
 	public Worm2D(Settings settings) {
-		mWidth = Settings.SIZE_WIDTH[settings.size];
-		mHeight = Settings.SIZE_HEIGHT[settings.size];
+		mDimensionWidth = Settings.SIZE_WIDTH[settings.size];
+		mDimensionHeight = Settings.SIZE_HEIGHT[settings.size];
 
-		mSpace = new int[mWidth][mHeight];
-		for (int i = 0; i < mWidth; i++) {
-			for (int j = 0; j < mHeight; j++) {
+		mSpace = new int[mDimensionWidth][mDimensionHeight];
+		for (int i = 0; i < mDimensionWidth; i++) {
+			for (int j = 0; j < mDimensionHeight; j++) {
 				mSpace[i][j] = SPACE_EMPTY;
 			}
 		}
 
 		mBody = new Cell[getMaxWiggleRoom()];
 		// Head pops out of his hole in center of board
-		Cell head = new Cell(mWidth / 2, mHeight / 2);
+		Cell head = new Cell(mDimensionWidth / 2, mDimensionHeight / 2);
 		mBody[mHeadIndex] = head;
 		mSpace[head.x][head.y] = SPACE_WORM;
 
@@ -27,25 +27,46 @@ public class Worm2D {
 		for (int i = 0; i < settings.food; i++) {
 			placeRandomFood(FOOD_FRESHNESS_MAX, FOOD_RATE_OF_DECAY);
 		}
+		
+		mHasTunnelVertical = new boolean[mDimensionWidth];
+		int vert = 0;
+		while (vert < mDimensionWidth) {
+			for (int i = 0; i < settings.getFenceLength() && vert < mDimensionWidth; i++, vert++) {
+				mHasTunnelVertical[vert] = false;
+			}
+			for (int i = 0; i < settings.getTunnelLength() && vert < mDimensionWidth; i++, vert++) {
+				mHasTunnelVertical[vert] = true;
+			}
+		}
+		mHasTunnelHorizontal = new boolean[mDimensionHeight];
+		int horiz = 0;
+		while (horiz < mDimensionHeight) {
+			for (int i = 0; i < settings.getFenceLength() && horiz < mDimensionHeight; i++, horiz++) {
+				mHasTunnelHorizontal[horiz] = false;
+			}
+			for (int i = 0; i < settings.getTunnelLength() && horiz < mDimensionHeight; i++, horiz++) {
+				mHasTunnelHorizontal[horiz] = true;
+			}
+		}
 	}
 
-	private final int mWidth;
+	private final int mDimensionWidth;
 	
 	public int getDimensionWidth() {
-		return mWidth;
+		return mDimensionWidth;
 	}
 	
-	private final int mHeight;
+	private final int mDimensionHeight;
 
 	public int getDimensionHeight() {
-		return mHeight;
+		return mDimensionHeight;
 	}
 	
 	/**
 	 * The number of possible empty spaces on the board ie. X * Y. Used for array sizing.
 	 */
 	private final int getMaxWiggleRoom() {
-		return mWidth * mHeight;
+		return mDimensionWidth * mDimensionHeight;
 	}
 	
 	public static final int SPACE_WORM = -2;
@@ -139,8 +160,8 @@ public class Worm2D {
 		
 		FoodCell foodCell = null;
 		while (foodCell == null) {
-			int x = random.nextInt(mWidth);
-			int y = random.nextInt(mHeight);
+			int x = random.nextInt(mDimensionWidth);
+			int y = random.nextInt(mDimensionHeight);
 			foodCell = placeFood(x, y, freshness, rateOfDecay);
 		}
 		return foodCell;
@@ -185,6 +206,25 @@ public class Worm2D {
 		mFoodCount--;
 		return true;
 	}
+	
+	private boolean mHasTunnelVertical[];
+	private boolean mHasTunnelHorizontal[];
+	
+	public boolean hasTunnelVertical(int x) {
+		return mHasTunnelVertical[x];
+	}
+	
+	public void setHasTunnelVertical(int x, boolean hasTunnel) {
+		mHasTunnelVertical[x] = hasTunnel;
+	}
+
+	public boolean hasTunnelHorizontal(int y) {
+		return mHasTunnelHorizontal[y];
+	}
+	
+	public void setHasTunnelHorizontal(int y, boolean hasTunnel) {
+		mHasTunnelHorizontal[y] = hasTunnel;
+	}
 
 	/**
 	 * Steps are executed in this order:
@@ -222,13 +262,17 @@ public class Worm2D {
 			break;
 		}
 
-		// TODO Remove bounds; wrap worm
-		// Out of bounds
-		if (headCandidateX < 0 || headCandidateX >= mWidth || headCandidateY < 0 || headCandidateY >= mHeight) {
-			return false;
+		// Check out of bounds and presence of tunnel or fence
+		if (headCandidateX < 0 || headCandidateX >= mDimensionWidth || headCandidateY < 0 || headCandidateY >= mDimensionHeight) {
+			if (getAxis(direction) == Axis.HORIZONTAL && hasTunnelHorizontal(headCandidateY)) {
+				headCandidateX = (headCandidateX + mDimensionWidth) % mDimensionWidth; // Enter tunnel, pop out on other side
+			} else if (getAxis(direction) == Axis.VERTICAL && hasTunnelVertical(headCandidateX)) {
+				headCandidateY = (headCandidateY + mDimensionHeight) % mDimensionHeight; // Enter tunnel, pop out on other side
+			} else {
+				return false;
+			}
 		}
 
-		// Still in bounds
 		// Move tail
 		if (mTummySize > 0) { // Tail grows; tail does not move forward
 			mTummySize--;
@@ -294,5 +338,22 @@ public class Worm2D {
 			return DIRECTION_LEFT;
 		}
 		return direction;
+	}
+	
+	enum Axis {
+		VERTICAL,
+		HORIZONTAL
+	}
+	
+	public static Axis getAxis(int direction) {
+		switch (direction) {
+		case DIRECTION_UP:
+		case DIRECTION_DOWN:
+			return Axis.VERTICAL;
+		case DIRECTION_LEFT:
+		case DIRECTION_RIGHT:
+			return Axis.HORIZONTAL;
+		}
+		return null;
 	}
 }

@@ -72,21 +72,49 @@ public class MainPanel extends JPanel {
 		JPanel foodPanel = new JPanel();
 		foodPanel.setLayout(new BoxLayout(foodPanel, BoxLayout.LINE_AXIS));
 		foodPanel.add(new JLabel(Settings.FOOD_LABEL_NAME));
-		SpinnerNumberModel munchieSpinnerModel = new SpinnerNumberModel(mSettings.food,
+		SpinnerNumberModel foodSpinnerModel = new SpinnerNumberModel(mSettings.food,
 				Settings.FOOD_MIN,
 				Settings.FOOD_MAX,
 				Settings.FOOD_STEP);
-		JSpinner foodSpinner = new JSpinner(munchieSpinnerModel);
+		JSpinner foodSpinner = new JSpinner(foodSpinnerModel);
 		foodSpinner.addChangeListener(new ChangeListener() {
 			@Override
 			public void stateChanged(ChangeEvent e) {
-				mSettings.food = (int) munchieSpinnerModel.getNumber();
+				mSettings.food = (int) foodSpinnerModel.getNumber();
 			}
 		});
 		foodPanel.add(foodSpinner);
 		add(foodPanel);
 		
 		// TODO Add boolean doesFoodDecay
+		
+		JPanel fencePanel = new JPanel();
+		fencePanel.setLayout(new BoxLayout(fencePanel, BoxLayout.LINE_AXIS));
+		fencePanel.add(new JLabel("Fence length:"));
+		SpinnerNumberModel fenceSpinnerModel = new SpinnerNumberModel(mSettings.getFenceLength(), 0, 5, 1);
+		JSpinner fenceSpinner = new JSpinner(fenceSpinnerModel);
+		fenceSpinner.addChangeListener(new ChangeListener() {
+			@Override
+			public void stateChanged(ChangeEvent e) {
+				mSettings.setFenceLength((int) fenceSpinnerModel.getNumber());
+			}
+		});
+		fencePanel.add(fenceSpinner);
+		add(fencePanel);
+		
+		JPanel tunnelPanel = new JPanel();
+		tunnelPanel.setLayout(new BoxLayout(tunnelPanel, BoxLayout.LINE_AXIS));
+		tunnelPanel.add(new JLabel("Tunnel length:"));
+		SpinnerNumberModel tunnelSpinnerModel = new SpinnerNumberModel(mSettings.getTunnelLength(), 0, 5, 1);
+		JSpinner tunnelSpinner = new JSpinner(tunnelSpinnerModel);
+		tunnelSpinner.addChangeListener(new ChangeListener() {
+			@Override
+			public void stateChanged(ChangeEvent e) {
+				mSettings.setTunnelLength((int) tunnelSpinnerModel.getNumber());
+			}
+		});
+		tunnelPanel.add(tunnelSpinner);
+		add(tunnelPanel);
 		
 		JButton playButton = new JButton("Play!");
 		playButton.addActionListener(playButtonListener);

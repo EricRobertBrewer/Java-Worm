@@ -18,4 +18,24 @@ public class Settings {
 	public static final int FOOD_STEP = 1;
 	public static final String FOOD_LABEL_NAME = "Food:";
 	public int food = FOOD_MIN;
+	
+	private int mFenceLength = 1;
+	
+	public int getFenceLength() {
+		return mFenceLength;
+	}
+	
+	public void setFenceLength(int length) {
+		mFenceLength = length;
+	}
+	
+	private int mTunnelLength = 0;
+	
+	public int getTunnelLength() {
+		return mTunnelLength;
+	}
+	
+	public void setTunnelLength(int length) {
+		mTunnelLength = length;
+	}
 }

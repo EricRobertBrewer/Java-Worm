@@ -19,13 +19,14 @@ public class WormPanel extends JPanel implements ActionListener {
 	
 	private WormListener mWormListener;
 	
-	// TODO Separate WormPanel (drawing) from Worm object (game mechanics)
 	public WormPanel(WormListener wormListener, Settings settings) {
 		mWormListener = wormListener;
 
 		mWorm = new Worm2D(settings);
 		
-		setPreferredSize(new Dimension(mWorm.getDimensionWidth() * RECT_SIZE, mWorm.getDimensionHeight() * RECT_SIZE));
+		setPreferredSize(new Dimension(
+				mWorm.getDimensionWidth() * RECT_SIZE + FENCE_THICKNESS * 2,
+				mWorm.getDimensionHeight() * RECT_SIZE + FENCE_THICKNESS * 2));
 		
 		setBackground(Color.BLACK);
 		int[] directions = { Worm2D.DIRECTION_UP, Worm2D.DIRECTION_LEFT, Worm2D.DIRECTION_DOWN, Worm2D.DIRECTION_RIGHT, KeyEvent.VK_SPACE };
@@ -42,18 +43,24 @@ public class WormPanel extends JPanel implements ActionListener {
 	}
 
 	private static final int RECT_SIZE = 11;
+	
 	private static final Color COLOR_WORM_HEAD = Color.RED;
 	private static final Color COLOR_WORM_BODY = Color.YELLOW;
 	private static final Color COLOR_WORM_TAIL = Color.ORANGE;
+	
 	private static final Color COLOR_FOOD_GROWTH_INDICATOR = Color.RED;
 	private static final Color COLOR_FOOD_FRESH = Color.GREEN; // (0, 255, 0)
 	private static final Color COLOR_FOOD_DECAYED = new Color(102, 51, 0);
+	
+	private static final int FENCE_THICKNESS = 3;
+	private static final Color COLOR_FENCE = Color.WHITE;
+	
 	/**
 	 * Useful for drawing a color which gradually fades into another color.
 	 * @param a starting color (0.0 away from {@code distance})
 	 * @param b color to fade towards (will achieve this color if {@code distance} is 1.0)
 	 * @param distance linear distance from {@code a} to {@code b}. Between 0.0 and 1.0.
-	 * @return a generated color {@code distance} between {@code a} and {@code b}
+	 * @return generated color {@code distance} between {@code a} and {@code b}
 	 */
 	private static final Color getColorBetweenLinear(Color a, Color b, float distance) {
 		float red = (a.getRed() * distance) + ((1 - distance) * b.getRed());
@@ -99,6 +106,20 @@ public class WormPanel extends JPanel implements ActionListener {
 			g.fillRect(cell.x * RECT_SIZE, cell.y * RECT_SIZE, RECT_SIZE, RECT_SIZE);
 		}
 
+		// Draw fence
+		g.setColor(COLOR_FENCE);
+		for (int x = 0; x < mWorm.getDimensionWidth(); x++) {
+			if (!mWorm.hasTunnelVertical(x)) {
+				g.fillRoundRect(x * RECT_SIZE, 0, RECT_SIZE, FENCE_THICKNESS, 1, 1);
+				g.fillRoundRect(x * RECT_SIZE, FENCE_THICKNESS + RECT_SIZE * mWorm.getDimensionHeight(), RECT_SIZE, FENCE_THICKNESS, 1, 1);
+			}
+		}
+		for (int y = 0; y < mWorm.getDimensionHeight(); y++) {
+			if (!mWorm.hasTunnelHorizontal(y)) {
+				g.fillRoundRect(0, y * RECT_SIZE, FENCE_THICKNESS, RECT_SIZE, 1, 1);
+				g.fillRoundRect(FENCE_THICKNESS + RECT_SIZE * mWorm.getDimensionWidth(), y * RECT_SIZE, FENCE_THICKNESS, RECT_SIZE, 1, 1);
+			}
+		}
 	}
 	
 	private Timer mTimer;
@@ -177,9 +198,9 @@ public class WormPanel extends JPanel implements ActionListener {
 	private void changeDirection(int direction) {
 		if (mDirection != Worm2D.getDirectionOpposite(direction)) {
 			mDirection = direction;
-			boolean wasTimerPaused = !mTimer.isRunning();
+			boolean wasTimerRunning = mTimer.isRunning();
 			mTimer.restart();
-			if (wasTimerPaused) {
+			if (!wasTimerRunning) {
 				mWormListener.onGameUnpaused(mWorm);
 			}
 		}

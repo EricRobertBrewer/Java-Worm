@@ -70,8 +70,7 @@ public class MainFrame extends JFrame implements ActionListener, WormListener {
 
 	@Override
 	public void onGamePaused(Worm2D worm) {
-		// TODO Display score when paused
-		setTitle("PAUSED");
+		setTitle("PAUSED | Score: " + worm.getLength());
 	}
 
 	@Override

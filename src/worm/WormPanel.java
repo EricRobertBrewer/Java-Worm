@@ -79,8 +79,8 @@ public class WormPanel extends JPanel implements ActionListener {
 		for (int i = 0; i < mWorm.getFoodCount(); i++) {
 			FoodCell foodCell = mWorm.getFoodCell(i);
 			if (foodCell != null) {
-				int x = foodCell.x * RECT_SIZE;
-				int y = foodCell.y * RECT_SIZE;
+				int x = foodCell.x * RECT_SIZE + FENCE_THICKNESS;
+				int y = foodCell.y * RECT_SIZE + FENCE_THICKNESS;
 				
 				g.setColor(getColorBetweenLinear(COLOR_FOOD_FRESH, COLOR_FOOD_DECAYED, (float)foodCell.getFood().getFreshness() / Worm2D.FOOD_FRESHNESS_MAX));
 				g.fillRect(x, y, RECT_SIZE, RECT_SIZE);
@@ -93,31 +93,31 @@ public class WormPanel extends JPanel implements ActionListener {
 
 		// Draw tail
 		g.setColor(COLOR_WORM_TAIL);
-		g.fillRect(mWorm.getTail().x * RECT_SIZE, mWorm.getTail().y * RECT_SIZE, RECT_SIZE, RECT_SIZE);
+		g.fillRect(mWorm.getTail().x * RECT_SIZE + FENCE_THICKNESS, mWorm.getTail().y * RECT_SIZE + FENCE_THICKNESS, RECT_SIZE, RECT_SIZE);
 		
 		// Draw head
 		g.setColor(COLOR_WORM_HEAD);
-		g.fillRect(mWorm.getHead().x * RECT_SIZE, mWorm.getHead().y * RECT_SIZE, RECT_SIZE, RECT_SIZE);
+		g.fillRect(mWorm.getHead().x * RECT_SIZE + FENCE_THICKNESS, mWorm.getHead().y * RECT_SIZE + FENCE_THICKNESS, RECT_SIZE, RECT_SIZE);
 
 		// Draw body
 		g.setColor(COLOR_WORM_BODY);
 		for (int i = 1; i < mWorm.getLength()-1; i++) {
 			Cell cell = mWorm.getBody(i);
-			g.fillRect(cell.x * RECT_SIZE, cell.y * RECT_SIZE, RECT_SIZE, RECT_SIZE);
+			g.fillRect(cell.x * RECT_SIZE + FENCE_THICKNESS, cell.y * RECT_SIZE + FENCE_THICKNESS, RECT_SIZE, RECT_SIZE);
 		}
 
 		// Draw fence
 		g.setColor(COLOR_FENCE);
 		for (int x = 0; x < mWorm.getDimensionWidth(); x++) {
 			if (!mWorm.hasTunnelVertical(x)) {
-				g.fillRoundRect(x * RECT_SIZE, 0, RECT_SIZE, FENCE_THICKNESS, 1, 1);
-				g.fillRoundRect(x * RECT_SIZE, FENCE_THICKNESS + RECT_SIZE * mWorm.getDimensionHeight(), RECT_SIZE, FENCE_THICKNESS, 1, 1);
+				g.fillRoundRect(x * RECT_SIZE + FENCE_THICKNESS, 0, RECT_SIZE, FENCE_THICKNESS, 1, 1);
+				g.fillRoundRect(x * RECT_SIZE + FENCE_THICKNESS, FENCE_THICKNESS + RECT_SIZE * mWorm.getDimensionHeight(), RECT_SIZE, FENCE_THICKNESS, 1, 1);
 			}
 		}
 		for (int y = 0; y < mWorm.getDimensionHeight(); y++) {
 			if (!mWorm.hasTunnelHorizontal(y)) {
-				g.fillRoundRect(0, y * RECT_SIZE, FENCE_THICKNESS, RECT_SIZE, 1, 1);
-				g.fillRoundRect(FENCE_THICKNESS + RECT_SIZE * mWorm.getDimensionWidth(), y * RECT_SIZE, FENCE_THICKNESS, RECT_SIZE, 1, 1);
+				g.fillRoundRect(0, y * RECT_SIZE + FENCE_THICKNESS, FENCE_THICKNESS, RECT_SIZE, 1, 1);
+				g.fillRoundRect(FENCE_THICKNESS + RECT_SIZE * mWorm.getDimensionWidth(), y * RECT_SIZE + FENCE_THICKNESS, FENCE_THICKNESS, RECT_SIZE, 1, 1);
 			}
 		}
 	}

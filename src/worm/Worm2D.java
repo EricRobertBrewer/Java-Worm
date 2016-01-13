@@ -235,7 +235,7 @@ public class Worm2D {
 		} else { // Move the tail forward, too
 			Cell tail = mBody[mTailIndex];
 			mSpace[tail.x][tail.y] = SPACE_EMPTY;
-			// TODO make space in body behind tail null
+			mBody[mTailIndex] = null;
 			mTailIndex = (mTailIndex + 1) % getMaxWiggleRoom();
 		}
 		

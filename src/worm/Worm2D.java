@@ -168,7 +168,7 @@ public class Worm2D {
 	}
 	
 	/**
-	 * 
+	 * Place a food in a specified location
 	 * @param x
 	 * @param y
 	 * @param freshness

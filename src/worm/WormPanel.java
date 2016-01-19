@@ -52,7 +52,9 @@ public class WormPanel extends JPanel implements ActionListener {
 	private static final Color COLOR_FOOD_FRESH = Color.GREEN; // (0, 255, 0)
 	private static final Color COLOR_FOOD_DECAYED = new Color(102, 51, 0);
 	
-	private static final int FENCE_THICKNESS = 3;
+	private static final int FENCE_THICKNESS = 6;
+	private static final int FENCE_ARC_WIDTH = 2;
+	private static final int FENCE_ARC_HEIGHT = 2;
 	private static final Color COLOR_FENCE = Color.WHITE;
 	
 	/**
@@ -73,51 +75,67 @@ public class WormPanel extends JPanel implements ActionListener {
 	protected void paintComponent(Graphics g) {
 		super.paintComponent(g);
 		
+		drawGame(g);
+	}
+	
+	private void drawGame(Graphics g) {
 		// TODO Pause screen
+		
+		int x, y;
 
 		// Draw food
 		for (int i = 0; i < mWorm.getFoodCount(); i++) {
 			FoodCell foodCell = mWorm.getFoodCell(i);
-			if (foodCell != null) {
-				int x = foodCell.x * RECT_SIZE + FENCE_THICKNESS;
-				int y = foodCell.y * RECT_SIZE + FENCE_THICKNESS;
-				
-				g.setColor(getColorBetweenLinear(COLOR_FOOD_FRESH, COLOR_FOOD_DECAYED, (float)foodCell.getFood().getFreshness() / Worm2D.FOOD_FRESHNESS_MAX));
-				g.fillRect(x, y, RECT_SIZE, RECT_SIZE);
-				
-				int growthValue = Worm2D.getGrowthFromFood(foodCell.getFood().getFreshness(), Worm2D.FOOD_FRESHNESS_PER_GROWTH);
-				g.setColor(COLOR_FOOD_GROWTH_INDICATOR);
-				g.drawString(String.valueOf(growthValue), x + RECT_SIZE / 2 - 3, y + RECT_SIZE / 2 + 5);
-			}
+			x = foodCell.x * RECT_SIZE + FENCE_THICKNESS;
+			y = foodCell.y * RECT_SIZE + FENCE_THICKNESS;
+			
+			g.setColor(getColorBetweenLinear(COLOR_FOOD_FRESH, COLOR_FOOD_DECAYED, (float)foodCell.getFood().getFreshness() / Worm2D.FOOD_FRESHNESS_MAX));
+			g.fillRect(x, y, RECT_SIZE, RECT_SIZE);
+			
+			int growthValue = Worm2D.getGrowthFromFood(foodCell.getFood().getFreshness(), Worm2D.FOOD_FRESHNESS_PER_GROWTH);
+			g.setColor(COLOR_FOOD_GROWTH_INDICATOR);
+			g.drawString(String.valueOf(growthValue), x + RECT_SIZE / 2 - 3, y + RECT_SIZE / 2 + 5);
 		}
 
 		// Draw tail
 		g.setColor(COLOR_WORM_TAIL);
-		g.fillRect(mWorm.getTail().x * RECT_SIZE + FENCE_THICKNESS, mWorm.getTail().y * RECT_SIZE + FENCE_THICKNESS, RECT_SIZE, RECT_SIZE);
+		Cell tail = mWorm.getTail();
+		x = tail.x * RECT_SIZE + FENCE_THICKNESS;
+		y = tail.y * RECT_SIZE + FENCE_THICKNESS;
+		g.fillRect(x, y, RECT_SIZE, RECT_SIZE);
 		
 		// Draw head
 		g.setColor(COLOR_WORM_HEAD);
-		g.fillRect(mWorm.getHead().x * RECT_SIZE + FENCE_THICKNESS, mWorm.getHead().y * RECT_SIZE + FENCE_THICKNESS, RECT_SIZE, RECT_SIZE);
+		Cell head = mWorm.getHead();
+		x = head.x * RECT_SIZE + FENCE_THICKNESS;
+		y = head.y * RECT_SIZE + FENCE_THICKNESS;
+		g.fillRect(x, y, RECT_SIZE, RECT_SIZE);
 
 		// Draw body
 		g.setColor(COLOR_WORM_BODY);
 		for (int i = 1; i < mWorm.getLength()-1; i++) {
 			Cell cell = mWorm.getBody(i);
-			g.fillRect(cell.x * RECT_SIZE + FENCE_THICKNESS, cell.y * RECT_SIZE + FENCE_THICKNESS, RECT_SIZE, RECT_SIZE);
+			x = cell.x * RECT_SIZE + FENCE_THICKNESS;
+			y = cell.y * RECT_SIZE + FENCE_THICKNESS;
+			g.fillRect(x, y, RECT_SIZE, RECT_SIZE);
 		}
 
 		// Draw fence
 		g.setColor(COLOR_FENCE);
-		for (int x = 0; x < mWorm.getDimensionWidth(); x++) {
-			if (!mWorm.hasTunnelVertical(x)) {
-				g.fillRoundRect(x * RECT_SIZE + FENCE_THICKNESS, 0, RECT_SIZE, FENCE_THICKNESS, 1, 1);
-				g.fillRoundRect(x * RECT_SIZE + FENCE_THICKNESS, FENCE_THICKNESS + RECT_SIZE * mWorm.getDimensionHeight(), RECT_SIZE, FENCE_THICKNESS, 1, 1);
+		y = FENCE_THICKNESS + RECT_SIZE * mWorm.getDimensionHeight();
+		for (int i = 0; i < mWorm.getDimensionWidth(); i++) {
+			if (!mWorm.hasTunnelVertical(i)) {
+				x = i * RECT_SIZE + FENCE_THICKNESS;
+				g.fillRoundRect(x, 0, RECT_SIZE, FENCE_THICKNESS, FENCE_ARC_WIDTH, FENCE_ARC_HEIGHT);
+				g.fillRoundRect(x, y, RECT_SIZE, FENCE_THICKNESS, FENCE_ARC_WIDTH, FENCE_ARC_HEIGHT);
 			}
 		}
-		for (int y = 0; y < mWorm.getDimensionHeight(); y++) {
-			if (!mWorm.hasTunnelHorizontal(y)) {
-				g.fillRoundRect(0, y * RECT_SIZE + FENCE_THICKNESS, FENCE_THICKNESS, RECT_SIZE, 1, 1);
-				g.fillRoundRect(FENCE_THICKNESS + RECT_SIZE * mWorm.getDimensionWidth(), y * RECT_SIZE + FENCE_THICKNESS, FENCE_THICKNESS, RECT_SIZE, 1, 1);
+		x = FENCE_THICKNESS + RECT_SIZE * mWorm.getDimensionWidth();
+		for (int j = 0; j < mWorm.getDimensionHeight(); j++) {
+			if (!mWorm.hasTunnelHorizontal(j)) {
+				y = j * RECT_SIZE + FENCE_THICKNESS;
+				g.fillRoundRect(0, y, FENCE_THICKNESS, RECT_SIZE, FENCE_ARC_WIDTH, FENCE_ARC_HEIGHT);
+				g.fillRoundRect(x, y, FENCE_THICKNESS, RECT_SIZE, FENCE_ARC_WIDTH, FENCE_ARC_HEIGHT);
 			}
 		}
 	}
@@ -138,7 +156,10 @@ public class WormPanel extends JPanel implements ActionListener {
 		repaint();
 	}
 	
+	boolean mIsWormDead = false;
+	
 	private void wormDied() {
+		mIsWormDead = true;
 		mTimer.stop();
 		// TODO Sweet worm animation where all sections of the worm starting from the tail become red
 		mWormListener.onWormDied(mWorm);

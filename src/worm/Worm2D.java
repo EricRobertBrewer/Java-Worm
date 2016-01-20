@@ -7,8 +7,10 @@ import java.util.Random;
 public class Worm2D {
 	
 	public Worm2D(Settings settings) {
-		mDimensionWidth = Settings.SIZE_WIDTH[settings.size];
-		mDimensionHeight = Settings.SIZE_HEIGHT[settings.size];
+		// TODO Just hold onto the settings. It's getting ridiculous
+		
+		mDimensionWidth = Settings.SIZE_WIDTH[settings.getSize()];
+		mDimensionHeight = Settings.SIZE_HEIGHT[settings.getSize()];
 
 		mSpace = new int[mDimensionWidth][mDimensionHeight];
 		for (int i = 0; i < mDimensionWidth; i++) {
@@ -22,10 +24,14 @@ public class Worm2D {
 		Cell head = new Cell(mDimensionWidth / 2, mDimensionHeight / 2);
 		mBody[mHeadIndex] = head;
 		mSpace[head.x][head.y] = SPACE_WORM;
+		
+		mFoodFreshnessMax = settings.getFoodFreshnessMax();
+		mFoodRateOfDecay = settings.getFoodRateOfDecay();
+		mFoodFreshnessPerGrowth = settings.getFoodFreshnessPerGrowth();
 
 		mFoodCell = new FoodCell[getMaxWiggleRoom()];
-		for (int i = 0; i < settings.food; i++) {
-			placeRandomFood(FOOD_FRESHNESS_MAX, FOOD_RATE_OF_DECAY);
+		for (int i = 0; i < settings.getFood(); i++) {
+			placeRandomFood(mFoodFreshnessMax, mFoodRateOfDecay);
 		}
 		
 		mHasTunnelVertical = new boolean[mDimensionWidth];
@@ -122,10 +128,23 @@ public class Worm2D {
 		return (getLength() + mFoodCount) < getMaxWiggleRoom();
 	}
 
-	// TODO Make these settings
-	public static final int FOOD_FRESHNESS_MAX = 100;
-	public static final int FOOD_RATE_OF_DECAY = 1;
-	public static final int FOOD_FRESHNESS_PER_GROWTH = 20;
+	private int mFoodFreshnessMax;
+	
+	public int getFoodFreshnessMax() {
+		return mFoodFreshnessMax;
+	}
+	
+	private int mFoodRateOfDecay;
+	
+	public int getFoodRateOfDecay() {
+		return mFoodRateOfDecay;
+	}
+	
+	private int mFoodFreshnessPerGrowth;
+	
+	public int getFoodFreshnessPerGrowth() {
+		return mFoodFreshnessPerGrowth;
+	}
 	
 	public static int getGrowthFromFood(int freshness, int freshnessPerGrowth) {
 		return (int) Math.ceil((double)freshness / (double)freshnessPerGrowth);
@@ -290,6 +309,8 @@ public class Worm2D {
 			mTailIndex = (mTailIndex + 1) % getMaxWiggleRoom();
 		}
 		
+		// TODO Mix bug where score improperly displays - caused by tail retract here, causing getLength() to be off by 1
+		
 		int candidateSpace = mSpace[headCandidateX][headCandidateY];
 		if (candidateSpace == SPACE_WORM) { // Trying to eat itself
 			return false;
@@ -300,8 +321,8 @@ public class Worm2D {
 		// Food! That means candidateSpace is the index of this food in the food array
 		if (candidateSpace != SPACE_EMPTY) {
 			int foodIndex = mSpace[headCandidateX][headCandidateY];
-			mTummySize += getGrowthFromFood(mFoodCell[foodIndex].getFood().getFreshness(), FOOD_FRESHNESS_PER_GROWTH);
-			if (!removeFoodAtIndex(foodIndex) || placeRandomFood(FOOD_FRESHNESS_MAX, FOOD_RATE_OF_DECAY) == null) {
+			mTummySize += getGrowthFromFood(mFoodCell[foodIndex].getFood().getFreshness(), mFoodFreshnessPerGrowth);
+			if (!removeFoodAtIndex(foodIndex) || placeRandomFood(mFoodFreshnessMax, mFoodRateOfDecay) == null) {
 				return false;
 			}
 		}

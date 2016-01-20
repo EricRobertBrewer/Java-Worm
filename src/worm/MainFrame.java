@@ -7,7 +7,7 @@ import java.awt.event.ActionListener;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 
-public class MainFrame extends JFrame implements ActionListener, WormListener {
+public class MainFrame extends JFrame implements WormListener {
 
 	/**
 	 * Launch the application.
@@ -38,17 +38,19 @@ public class MainFrame extends JFrame implements ActionListener, WormListener {
 	}
 	
 	private void showMainPanel(int lastScore) {
-		setContentPane(new MainPanel(mSettings, this, lastScore));
+		setContentPane(new MainPanel(mSettings, mPlayButtonListener, lastScore));
 		setTitle("Play Worm");
 		setResizable(true);
 		pack();
 		setLocationRelativeTo(null);
 	}
 
-	@Override
-	public void actionPerformed(ActionEvent e) {
-		beginGame();
-	}
+	private final ActionListener mPlayButtonListener = new ActionListener() {
+		@Override
+		public void actionPerformed(ActionEvent e) {
+			beginGame();
+		}
+	};
 	
 	private void beginGame() {
 		// TODO Game Panel shouldn't have extra space, ~8 pixels now

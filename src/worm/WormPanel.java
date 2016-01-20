@@ -35,7 +35,7 @@ public class WormPanel extends JPanel {
 		
 		addActions();
 
-		mTimer = new Timer(Settings.TIMER_DELAY[settings.speed], mTimerListener);
+		mTimer = new Timer(Settings.getTimerDelay(settings.getSpeed()), mTimerListener);
 		mTimer.setInitialDelay(0);
 		
 		addMouseListener(mMouseListener);
@@ -105,10 +105,10 @@ public class WormPanel extends JPanel {
 			int x = foodCell.x * RECT_SIZE + FENCE_THICKNESS;
 			int y = foodCell.y * RECT_SIZE + FENCE_THICKNESS;
 			
-			g.setColor(getColorBetweenLinear(fresh, decayed, (float)foodCell.getFood().getFreshness() / Worm2D.FOOD_FRESHNESS_MAX));
+			g.setColor(getColorBetweenLinear(fresh, decayed, (float)foodCell.getFood().getFreshness() / mWorm.getFoodFreshnessMax()));
 			g.fillRect(x, y, RECT_SIZE, RECT_SIZE);
 			
-			int growthValue = Worm2D.getGrowthFromFood(foodCell.getFood().getFreshness(), Worm2D.FOOD_FRESHNESS_PER_GROWTH);
+			int growthValue = Worm2D.getGrowthFromFood(foodCell.getFood().getFreshness(), mWorm.getFoodFreshnessPerGrowth());
 			g.setColor(indicator);
 			g.drawString(String.valueOf(growthValue), x + RECT_SIZE / 2 - 3, y + RECT_SIZE / 2 + 5);
 		}

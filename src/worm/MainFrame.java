@@ -66,7 +66,7 @@ public class MainFrame extends JFrame implements WormListener {
 	}
 	
 	private static String getScoreDisplay(Worm2D worm) {
-		return "Score: " + worm.getLength();
+		return "Score: " + worm.getScore();
 	}
 
 	@Override
@@ -76,7 +76,7 @@ public class MainFrame extends JFrame implements WormListener {
 	
 	@Override
 	public void onGameExited(Worm2D worm) {
-		showMainPanel(worm.getLength());
+		showMainPanel(worm.getScore());
 	}
 
 	@Override

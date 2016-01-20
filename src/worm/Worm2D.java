@@ -116,11 +116,32 @@ public class Worm2D {
 		return mBody[mTailIndex];
 	}
 	
+	private boolean mIsTailRetracted = false;
+	
 	/**
+	 * Sometimes, {@code getLength()} will be called in the middle of {@code move(int)},
+	 * ie. after {@code move(int)} has returned {@code false}, the tail index will have been incremented
+	 * but the head index will have not. We keep track of in order to display a correct score.
+	 * @return true if the tail has retracted (only during {@code move(int)}), otherwise, false
+	 */
+	public boolean isTailRetracted() {
+		return mIsTailRetracted;
+	}
+	
+	/**
+	 * Better to use when drawing as compared to {@code getScore()}.
 	 * @return length of worm including the head
 	 */
 	public int getLength() {
 		return (mHeadIndex - mTailIndex + getMaxWiggleRoom()) % getMaxWiggleRoom() + 1;
+	}
+	
+	/**
+	 * @return score of game. Considers tail retraction after game loss which occurs
+	 * in {@code move(int)} due to eating worm body.
+	 */
+	public int getScore() {
+		return getLength() + (isTailRetracted() ? 1 : 0);
 	}
 
 	/** @return true if there is space to place a new food on the board; otherwise, false */
@@ -257,11 +278,9 @@ public class Worm2D {
 	 * <ol>
 	 * <li>Checks to see if move in the given direction is within dimensional <b>bounds</b>.</li>
 	 * <li>Increments <b>tail</b> forward, or leaves it in place if body should grow (due to eaten food).</li>
-	 * <li>Move the <b>head</b> forward in the given direction.
-	 * (This causes {@code getLength()} to always return a correct value,
-	 * even if it gets called after this method returns {@code false}.)</li>
 	 * <li>Checks if the next space in the given direction is any part of the worm's <b>body</b>.</li>
 	 * <li>Checks if the space is <b>food</b>. If so, add another food in an empty space at 100% freshness.</li>
+	 * <li>Move the <b>head</b> forward in the given direction.</li>
 	 * <li>All food <b>decays</b> at one times its rate of decay.</li>
 	 * </ol>
 	 * @param direction
@@ -313,16 +332,10 @@ public class Worm2D {
 			mSpace[tail.x][tail.y] = SPACE_EMPTY;
 			mBody[mTailIndex] = null;
 			mTailIndex = (mTailIndex + 1) % getMaxWiggleRoom();
+			mIsTailRetracted = true;
 		}
 		
 		int candidateSpace = mSpace[headCandidateX][headCandidateY];
-		
-		// Move head
-		Cell newHead = new Cell(headCandidateX, headCandidateY);
-		mHeadIndex = (mHeadIndex + 1) % getMaxWiggleRoom(); // Increment head index
-		mBody[mHeadIndex] = newHead; // Place new head in worm
-		mSpace[newHead.x][newHead.y] = SPACE_WORM;
-		
 		if (candidateSpace == SPACE_WORM) { // Trying to eat itself
 			return false;
 		}
@@ -337,6 +350,13 @@ public class Worm2D {
 				return false;
 			}
 		}
+		
+		// Move head
+		Cell newHead = new Cell(headCandidateX, headCandidateY);
+		mHeadIndex = (mHeadIndex + 1) % getMaxWiggleRoom(); // Increment head index
+		mBody[mHeadIndex] = newHead; // Place new head in worm
+		mSpace[newHead.x][newHead.y] = SPACE_WORM;
+		mIsTailRetracted = false;
 		
 		return decayAll() > 1;
 	}

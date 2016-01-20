@@ -62,25 +62,34 @@ public class MainFrame extends JFrame implements ActionListener, WormListener {
 		pack();
 		setLocationRelativeTo(null);
 	}
+	
+	private static String getScoreDisplay(Worm2D worm) {
+		return "Score: " + worm.getLength();
+	}
 
 	@Override
 	public void onWormDied(Worm2D worm) {
+		//setTitle("GAME OVER | " + getScoreDisplay(worm));
+	}
+	
+	@Override
+	public void onGameExited(Worm2D worm) {
 		showMainPanel(worm.getLength());
 	}
 
 	@Override
 	public void onGamePaused(Worm2D worm) {
-		setTitle("PAUSED | Score: " + worm.getLength());
+		setTitle("PAUSED | " + getScoreDisplay(worm));
 	}
 
 	@Override
 	public void onGameUnpaused(Worm2D worm) {
-		setTitle("Score: " + worm.getLength());
+		setTitle(getScoreDisplay(worm));
 	}
 
 	@Override
 	public void onLengthChanged(Worm2D worm) {
-		setTitle("Score: " + worm.getLength());
+		setTitle(getScoreDisplay(worm));
 	}
 
 	/**

@@ -117,7 +117,7 @@ public class Worm2D {
 		return (mHeadIndex - mTailIndex + getMaxWiggleRoom()) % getMaxWiggleRoom() + 1;
 	}
 
-	/** @return True if there is space to place a new food on the board; otherwise, false */
+	/** @return true if there is space to place a new food on the board; otherwise, false */
 	private boolean hasEmptySpacesOnBoard() {
 		return (getLength() + mFoodCount) < getMaxWiggleRoom();
 	}
@@ -145,13 +145,20 @@ public class Worm2D {
 	
 	private int mTummySize = 1;
 	
+	/**
+	 * @return number of body segments still waiting to be grown from tail
+	 */
+	public int getDigestingFood() {
+		return mTummySize;
+	}
+	
 	private final Random random = new Random();
 
 	/**
 	 * Place a food in a randomly chosen, legal space on the board.
 	 * @param freshness
 	 * @param rateOfDecay
-	 * @return The newly placed {@code FoodCell}, or {@code null} if there were no empty spaces on the board
+	 * @return the newly placed {@code FoodCell}, or {@code null} if there were no empty spaces on the board
 	 */
 	public FoodCell placeRandomFood(int freshness, int rateOfDecay) {
 		if (!hasEmptySpacesOnBoard()) {
@@ -176,13 +183,13 @@ public class Worm2D {
 	 * @return the newly placed {@code FoodCell}, or {@code null} if the cell was occupied
 	 */
 	public FoodCell placeFood(int x, int y, int freshness, int rateOfDecay) {
-		if (mSpace[x][y] == SPACE_EMPTY) {
-			mSpace[x][y] = mFoodCount;
-			mFoodCell[mFoodCount] = new FoodCell(x, y, freshness, rateOfDecay);
-			mFoodCount++;
-			return mFoodCell[mFoodCount-1]; // The newly added FoodCell
+		if (mSpace[x][y] != SPACE_EMPTY) {
+			return null;
 		}
-		return null;
+		mSpace[x][y] = mFoodCount;
+		mFoodCell[mFoodCount] = new FoodCell(x, y, freshness, rateOfDecay);
+		mFoodCount++;
+		return mFoodCell[mFoodCount-1]; // The newly added FoodCell
 	}
 
 	/**

@@ -1,5 +1,6 @@
 package worm;
 
+import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -17,21 +18,28 @@ import javax.swing.SpinnerNumberModel;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
-public class MainPanel extends JPanel {
+public class SettingsPanel extends JPanel {
 	
-	public MainPanel(Settings settings, ActionListener playButtonListener, int lastScore) {
-		// TODO Add borders, glue, etc.
+	public SettingsPanel(Settings settings, ActionListener playButtonListener, int lastScore) {
 		// TODO setPreferredSize
+		
+		// TODO Center all labels horizontally in frame
 		
 		setLayout(new BoxLayout(this, BoxLayout.PAGE_AXIS));
 		setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 		
-		add(new JLabel("Worm"));
+		JLabel titleLabel = new JLabel("Worm");
+		titleLabel.setHorizontalAlignment(JLabel.CENTER);
+		add(titleLabel);
 		// TODO Save high score for each settings permutation, display
-		add(new JLabel("High Score: "));
-		if (lastScore > 1) {
-			add(new JLabel("Your score: " + String.valueOf(lastScore)));
-		}
+		JLabel highScoreLabel = new JLabel("High Score: ");
+		highScoreLabel.setHorizontalAlignment(JLabel.CENTER);
+		add(highScoreLabel);
+		
+		JLabel lastScoreLabel = new JLabel("Your score: " + String.valueOf(lastScore));
+		lastScoreLabel.setHorizontalAlignment(JLabel.CENTER);
+		lastScoreLabel.setVisible(lastScore > 1);
+		add(lastScoreLabel);
 		
 		add(Box.createRigidArea(new Dimension(5, 5)));
 		
@@ -41,14 +49,27 @@ public class MainPanel extends JPanel {
 		
 		add(makeFoodPanel(settings));
 		
-		// TODO Add boolean doesFoodDecay
+		// TODO Add boolean and checkbox doesFoodDecay
 		
-		add(makeFencePanel(settings));
-		
-		add(makeTunnelPanel(settings));
+		JLabel fenceAndTunnelErrorLabel = new JLabel("Fences and tunnels cannot both be 0.");
+		fenceAndTunnelErrorLabel.setForeground(Color.RED);
+		fenceAndTunnelErrorLabel.setHorizontalAlignment(JLabel.CENTER);
+		fenceAndTunnelErrorLabel.setVisible(false);
+		add(makeFencePanel(settings, fenceAndTunnelErrorLabel));
+		add(makeTunnelPanel(settings, fenceAndTunnelErrorLabel));
+		add(fenceAndTunnelErrorLabel);
 		
 		JButton playButton = new JButton("Play!");
-		playButton.addActionListener(playButtonListener);
+		playButton.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				if (settings.getFenceLength() == 0 && settings.getTunnelLength() == 0) {
+					fenceAndTunnelErrorLabel.setVisible(true);
+				} else {
+					playButtonListener.actionPerformed(e);
+				}
+			}
+		});
 		add(playButton);
 	}
 	
@@ -73,7 +94,6 @@ public class MainPanel extends JPanel {
 	}
 	
 	private JPanel makeSpeedPanel(Settings settings) {
-		// TODO Make speed selectable by slider
 		JPanel speedPanel = new JPanel();
 		speedPanel.setLayout(new BoxLayout(speedPanel, BoxLayout.PAGE_AXIS));
 		speedPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
@@ -130,7 +150,7 @@ public class MainPanel extends JPanel {
 		return foodPanel;
 	}
 	
-	private JPanel makeFencePanel(Settings settings) {
+	private JPanel makeFencePanel(Settings settings, JLabel errorLabel) {
 		JPanel fencePanel = new JPanel();
 		fencePanel.setLayout(new BoxLayout(fencePanel, BoxLayout.LINE_AXIS));
 		fencePanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
@@ -140,14 +160,18 @@ public class MainPanel extends JPanel {
 		fenceSpinner.addChangeListener(new ChangeListener() {
 			@Override
 			public void stateChanged(ChangeEvent e) {
-				settings.setFenceLength((int) fenceSpinnerModel.getNumber());
+				int fences = (int) fenceSpinnerModel.getNumber();
+				settings.setFenceLength(fences);
+				if (fences > 0) {
+					errorLabel.setVisible(false);
+				}
 			}
 		});
 		fencePanel.add(fenceSpinner);
 		return fencePanel;
 	}
 	
-	private JPanel makeTunnelPanel(Settings settings) {
+	private JPanel makeTunnelPanel(Settings settings, JLabel errorLabel) {
 		JPanel tunnelPanel = new JPanel();
 		tunnelPanel.setLayout(new BoxLayout(tunnelPanel, BoxLayout.LINE_AXIS));
 		tunnelPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
@@ -157,7 +181,11 @@ public class MainPanel extends JPanel {
 		tunnelSpinner.addChangeListener(new ChangeListener() {
 			@Override
 			public void stateChanged(ChangeEvent e) {
-				settings.setTunnelLength((int) tunnelSpinnerModel.getNumber());
+				int tunnels = (int) tunnelSpinnerModel.getNumber();
+				settings.setTunnelLength(tunnels);
+				if (tunnels > 0) {
+					errorLabel.setVisible(false);
+				}
 			}
 		});
 		tunnelPanel.add(tunnelSpinner);

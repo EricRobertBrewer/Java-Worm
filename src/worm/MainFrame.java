@@ -38,7 +38,7 @@ public class MainFrame extends JFrame implements WormListener {
 	}
 	
 	private void showMainPanel(int lastScore) {
-		setContentPane(new MainPanel(mSettings, mPlayButtonListener, lastScore));
+		setContentPane(new SettingsPanel(mSettings, mPlayButtonListener, lastScore));
 		setTitle("Play Worm");
 		setResizable(true);
 		pack();

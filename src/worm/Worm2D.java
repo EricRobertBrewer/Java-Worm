@@ -254,19 +254,25 @@ public class Worm2D {
 
 	/**
 	 * Steps are executed in this order:
-	 * Checks to see if move in the given direction is within dimensional bounds.
-	 * Increments tail forward, or leaves it in place if body should grow (due to eaten food).
-	 * Checks if the next space in the given direction is any part of the worm's body.
-	 * Checks if the space is food. If so, add another food in an empty space at 100% freshness.
-	 * Move the head forward in the given direction.
-	 * All food decays at one times its rate of decay.
+	 * <ol>
+	 * <li>Checks to see if move in the given direction is within dimensional <b>bounds</b>.</li>
+	 * <li>Increments <b>tail</b> forward, or leaves it in place if body should grow (due to eaten food).</li>
+	 * <li>Move the <b>head</b> forward in the given direction.
+	 * (This causes {@code getLength()} to always return a correct value,
+	 * even if it gets called after this method returns {@code false}.)</li>
+	 * <li>Checks if the next space in the given direction is any part of the worm's <b>body</b>.</li>
+	 * <li>Checks if the space is <b>food</b>. If so, add another food in an empty space at 100% freshness.</li>
+	 * <li>All food <b>decays</b> at one times its rate of decay.</li>
+	 * </ol>
 	 * @param direction
 	 * @return true if the worm is attempting to move into an empty space; otherwise, false.
 	 * Ways to die:
-	 * 1. attempting to move out of dimensional bounds,
-	 * 2. attempting to move into any part of the worm's body,
-	 * 3. all available space is filled with either food or body spaces,
-	 * 4. all remaining food disappears (decays).
+	 * <ol>
+	 * <li>attempting to move out of dimensional bounds</li>
+	 * <li>attempting to move into any part of the worm's body</li>
+	 * <li>all available space is filled with either food or body spaces</li>
+	 * <li>all remaining food disappears (decays).</li>
+	 * </ol>
 	 * <b>Note:</b> Attempting to move after {@code false} is returned could lead to adverse behavior.
 	 */
 	public boolean move(int direction) {
@@ -309,9 +315,14 @@ public class Worm2D {
 			mTailIndex = (mTailIndex + 1) % getMaxWiggleRoom();
 		}
 		
-		// TODO Mix bug where score improperly displays - caused by tail retract here, causing getLength() to be off by 1
-		
 		int candidateSpace = mSpace[headCandidateX][headCandidateY];
+		
+		// Move head
+		Cell newHead = new Cell(headCandidateX, headCandidateY);
+		mHeadIndex = (mHeadIndex + 1) % getMaxWiggleRoom(); // Increment head index
+		mBody[mHeadIndex] = newHead; // Place new head in worm
+		mSpace[newHead.x][newHead.y] = SPACE_WORM;
+		
 		if (candidateSpace == SPACE_WORM) { // Trying to eat itself
 			return false;
 		}
@@ -326,12 +337,6 @@ public class Worm2D {
 				return false;
 			}
 		}
-		
-		// Move head
-		Cell newHead = new Cell(headCandidateX, headCandidateY);
-		mHeadIndex = (mHeadIndex + 1) % getMaxWiggleRoom(); // Increment head index
-		mBody[mHeadIndex] = newHead; // Place new head in worm
-		mSpace[newHead.x][newHead.y] = SPACE_WORM;
 		
 		// Food decays
 		for (int i = 0; i < mFoodCount; i++) {

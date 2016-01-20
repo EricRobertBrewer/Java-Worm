@@ -358,7 +358,7 @@ public class Worm2D {
 		mSpace[newHead.x][newHead.y] = SPACE_WORM;
 		mIsTailRetracted = false;
 		
-		return decayAll() > 1;
+		return decayAll() > 0;
 	}
 		
 	public int decayAll() {

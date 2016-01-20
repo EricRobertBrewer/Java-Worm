@@ -331,27 +331,28 @@ public class Worm2D {
 		
 		// Food! That means candidateSpace is the index of this food in the food array
 		if (candidateSpace != SPACE_EMPTY) {
-			int foodIndex = mSpace[headCandidateX][headCandidateY];
+			int foodIndex = candidateSpace;
 			mTummySize += getGrowthFromFood(mFoodCell[foodIndex].getFood().getFreshness(), mFoodFreshnessPerGrowth);
 			if (!removeFoodAtIndex(foodIndex) || placeRandomFood(mFoodFreshnessMax, mFoodRateOfDecay) == null) {
 				return false;
 			}
 		}
 		
-		// Food decays
+		return decayAll() > 1;
+	}
+		
+	public int decayAll() {
 		for (int i = 0; i < mFoodCount; i++) {
 			if (mFoodCell[i] != null) {
 				mFoodCell[i].getFood().decay();
 				if (mFoodCell[i].getFood().isDecayed()) {
-					removeFoodAtIndex(i);
-					if (mFoodCount == 0) {
-						return false;
-					}
+					removeFoodAtIndex(i); // Causes mFoodCount to decrement! Be careful!
+					i--;
 				}
 			}
 		}
 		
-		return true; // Didn't die; move was legal
+		return mFoodCount;
 	}
 
 	public static final int DIRECTION_UP = KeyEvent.VK_W;
